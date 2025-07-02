@@ -15,30 +15,6 @@ MilitaryDocs-RAG is a Retrieval-Augmented Generation (RAG) application that allo
 - 📦 Modular architecture with support for scalable ingestion and storage
 - 🔐 Configurable with `.env` for API keys and secrets
 
----
-
-## 📁 Project Structure
-
-miltarydocs_rag/
-├── backend/
-│ ├── api/ # FastAPI endpoints
-│ ├── services/ # Embedding + QA logic
-│ ├── utils/ # Helper functions
-│ ├── vector_store/ # Pinecone or Chroma DB clients
-│ └── main.py # FastAPI app entrypoint
-├── scripts/
-│ └── ingest_documents.py # PDF chunking + embedding ingestion
-├── data/
-│ └── pdfs/ # Directory for raw PDF files
-├── .env # API keys (not checked into git)
-├── requirements.txt # All required pip packages
-└── README.md # You’re here
-
-yaml
-Copy
-Edit
-
----
 
 ## ⚙️ Setup Instructions
 
