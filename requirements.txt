@@ -1,9 +1,7 @@
 fastapi
 uvicorn
-langchain
-langchain-community
 openai
+langchain
 pinecone
-tiktoken
-pypdf
+PyPDF2
 python-dotenv

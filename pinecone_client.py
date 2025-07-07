@@ -1,31 +1,44 @@
-from pinecone import Pinecone, ServerlessSpec
 import os
 from dotenv import load_dotenv
+from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Pinecone as LangChainPinecone
+from langchain_pinecone import Pinecone as LangchainPinecone
 
+# Load env vars
 load_dotenv()
 
-pinecone_api_key = os.getenv("PINECONE_API_KEY")
-index_name = os.getenv("PINECONE_INDEX_NAME")
-environment = os.getenv("PINECONE_ENV")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")  # e.g., "us-east-1"
+PINECONE_INDEX = os.getenv("PINECONE_INDEX")  # e.g., "military-docs-index"
 
-# Initialize Pinecone
-pc = Pinecone(api_key=pinecone_api_key)
+if not all([PINECONE_API_KEY, PINECONE_ENVIRONMENT, PINECONE_INDEX]):
+    raise ValueError("Missing one of: PINECONE_API_KEY, PINECONE_ENVIRONMENT, PINECONE_INDEX")
 
-# Create index if it doesn't exist
-if index_name not in pc.list_indexes().names():
+# ✅ New SDK usage
+pc = Pinecone(api_key=PINECONE_API_KEY)
+
+# Create index if not exists
+if PINECONE_INDEX not in pc.list_indexes().names():
+    print(f"⚠️ Index '{PINECONE_INDEX}' not found. Creating it...")
     pc.create_index(
-        name=index_name,
+        name=PINECONE_INDEX,
         dimension=1536,
         metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region=environment)
+        spec=ServerlessSpec(cloud="aws", region=PINECONE_ENVIRONMENT)
     )
+    print(f"✅ Created index: {PINECONE_INDEX}")
+else:
+    print(f"📚 Using existing index: {PINECONE_INDEX}")
 
-index = pc.Index(index_name)
+# Connect to index
+index = pc.Index(PINECONE_INDEX)
+embed_model = OpenAIEmbeddings()
 
-# Embedding model
-embedding = OpenAIEmbeddings()
+# Vector store used in LangChain
+vector_store = LangchainPinecone(index=index, embedding=embed_model, text_key="text")
 
-# Vector store
-vector_store = LangChainPinecone(index, embedding.embed_query, "text")
+# Ingest helper function
+def add_to_index(texts):
+    print(f"📥 Adding {len(texts)} chunks to Pinecone...")
+    vector_store.add_documents(texts)
+    print("✅ Ingestion complete.")

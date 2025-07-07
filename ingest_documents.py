@@ -1,23 +1,23 @@
-from backend.vector_store.pinecone_client import vector_store
-from backend.utils.pdf_parser import load_pdf
-from backend.utils.chunker import split_text
-from langchain.docstore.document import Document
+from backend.utils.pdf_parser import extract_text_from_pdf
+from backend.utils.chunker import chunk_text
+from backend.vector_store.pinecone_client import add_to_index
+from langchain_core.documents import Document
+
 import os
 
+PDF_FOLDER = "data"  # Make sure this exists and has PDFs
 
-DATA_PATH = "./data"
+all_docs = []
 
+for filename in os.listdir(PDF_FOLDER):
+    if filename.endswith(".pdf"):
+        file_path = os.path.join(PDF_FOLDER, filename)
+        print(f"🔍 Processing: {filename}")
+        text = extract_text_from_pdf(file_path)
+        chunks = chunk_text(text)
+        docs = [Document(page_content=str(chunk), metadata={"source": filename}) for chunk in chunks if isinstance(chunk, str) and chunk.strip()]
 
-def ingest():
-    for file in os.listdir(DATA_PATH):
-        if file.endswith(".pdf"):
-            file_path = os.path.join(DATA_PATH, file)
-            text = load_pdf(file_path)
-            chunks = split_text(text)
-            docs = [Document(page_content=chunk, metadata={"source": file}) for chunk in chunks]
-            vector_store.add_documents(docs)
-            print(f"✅ {file} ingested")
+        all_docs.extend(docs)
 
-
-if __name__ == "__main__":
-    ingest()
+# Store into Pinecone
+add_to_index(all_docs)
