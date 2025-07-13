@@ -1,11 +1,13 @@
+from transformers import pipeline
+from langchain.llms import HuggingFacePipeline
+
 from backend.vector_store.pinecone_client import vector_store
-from langchain_openai import OpenAI
 from langchain.chains import RetrievalQA
 
-# Load LLM
-llm = OpenAI(model_name="gpt-4", temperature=0.3)
+pipe = pipeline("text2text-generation", model="google/flan-t5-base")
 
-# Retrieval Chain
+llm = HuggingFacePipeline(pipeline=pipe)
+
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     retriever=vector_store.as_retriever(search_kwargs={"k": 3}),
