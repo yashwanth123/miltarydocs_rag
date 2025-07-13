@@ -1,144 +1,122 @@
-# 🪖 MilitaryDocs RAG
+# MilitaryDocs RAG Chatbot
 
-**MilitaryDocs RAG** is a Retrieval-Augmented Generation (RAG) application built using **FastAPI**, **Pinecone**, **OpenAI**, and **LangChain**, designed to allow semantic search and question answering over large collections of scanned military documents (PDFs).
-
----
-
-## 🚀 Features
-
-- ✅ Ingests scanned PDFs with OCR (Tesseract + PyMuPDF)
-- ✅ Extracts text and splits into context-aware chunks
-- ✅ Stores vector embeddings in **Pinecone**
-- ✅ Retrieves relevant document chunks using LangChain retriever
-- ✅ Uses GPT-4 (or Claude) to generate answers grounded in PDF content
-- ✅ Exposed via a **FastAPI backend** and a basic **HTML frontend**
+*Question-Answering System Using LangChain, FastAPI, Hugging Face, and Pinecone*
 
 ---
 
-## 📁 Project Structure
+## 📖 Project Overview
+
+This project builds a document-based chatbot that retrieves relevant answers from military PDF documents using:
+
+* ✅ Retrieval-Augmented Generation (RAG)
+* ✅ Hugging Face LLM (No OpenAI dependency)
+* ✅ Pinecone for vector search
+* ✅ FastAPI backend
+
+---
+
+## 🗂️ Project Structure
+
+```
+miltarydocs_rag/
+│
+├── backend/
+│   ├── api/                # FastAPI routes
+│   │   └── main.py
+│   ├── services/           # Query and embedding logic
+│   │   └── embedding_service.py
+│   ├── utils/              # PDF and text utilities
+│   │   ├── chunker.py
+│   │   └── pdf_parser.py
+│   └── vector_store/       # Pinecone setup
+│       └── pinecone_client.py
+│
+├── scripts/                # Setup scripts
+│   ├── create_index.py
+│   └── ingest_documents.py
+│
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## ⚙️ Installation & Setup
+
+1️⃣ Clone the repository:
 
 ```bash
-miltarydocs_rag/
-├── backend/
-│   ├── api/
-│   │   └── endpoints.py         # API routes
-│   ├── services/
-│   │   └── embedding_service.py # Main query logic
-│   ├── utils/
-│   │   ├── chunker.py           # Text chunking
-│   │   └── pdf_parser.py        # OCR + PDF parsing
-│   ├── vector_store/
-│   │   └── pinecone_client.py   # Pinecone vector DB integration
-│   └── main.py                  # FastAPI entrypoint
-├── scripts/
-│   └── ingest_documents.py      # Script to process + embed PDFs
-├── data/                        # Place your PDFs here
-├── .env                         # API keys and configs
-└── requirements.txt
+git clone <your-repo-url>
+cd miltarydocs_rag
+```
 
+2️⃣ Install dependencies:
 
-🔧 Setup Instructions
-1. Clone & Set Up Environment
-git clone https://github.com/yourusername/militarydocs_rag.git
-cd militarydocs_rag
-python3 -m venv venv
-source venv/bin/activate
+```bash
 pip install -r requirements.txt
+```
 
-2. Install OCR Dependencies
-brew install poppler tesseract
+3️⃣ Configure your environment variables:
 
-3. Create .env File
-OPENAI_API_KEY=sk-xxxx
-PINECONE_API_KEY=pcsk-xxxx
-PINECONE_ENVIRONMENT=us-east-1
-PINECONE_INDEX=military-docs
+Create a `.env` file:
 
-📥 Ingest PDFs (with OCR)
-Place your scanned or native PDFs inside data/, e.g.:
+```
+HUGGINGFACEHUB_API_TOKEN=your_hf_token_here
+PINECONE_API_KEY=your_pinecone_key_here
+PINECONE_ENV=us-east-1
+```
 
+4️⃣ Create Pinecone index and ingest documents:
 
-data/pdf1.pdf
-data/manual_2024.pdf
-
-Run ingestion:
+```bash
 export PYTHONPATH=.
+python scripts/create_index.py
 python scripts/ingest_documents.py
+```
 
-🌐 Start the API Server
+5️⃣ Run the FastAPI server:
+
+```bash
 uvicorn backend.main:app --reload
-Then open: http://127.0.0.1:8000/docs
+```
 
-🧠 How It Works (RAG Flow)
-OCR with PyMuPDF + Tesseract → extracts clean text from scanned PDFs
+6️⃣ Test the API:
 
-Text Chunking → splits long documents into semantic blocks
+Visit:
 
-Embedding → uses OpenAI's embedding model (text-embedding-3-small)
+```
+http://127.0.0.1:8000/docs
+```
 
-Pinecone → stores and indexes embeddings for similarity search
+Example `curl`:
 
-LangChain Retriever → pulls relevant chunks for any user query
+```bash
+curl -X POST "http://127.0.0.1:8000/ask" \
+-H "Content-Type: application/json" \
+-d '{"query":"What is the military chain of command?"}'
+```
 
-LLM → GPT-4 (or Claude) generates a grounded response
+---
 
-FastAPI Endpoint → delivers results via REST API
+## ✅ What’s Configured:
 
-✅ Example API Usage
-POST /ask
+* Hugging Face Embeddings → `sentence-transformers/all-MiniLM-L6-v2`
+* Hugging Face LLM → Configurable via `.env`
+* Pinecone vector database with 384 dimensions
+* PDF text + OCR extraction
+* FastAPI endpoint: `/ask`
 
-json
-Copy
-Edit
-{
-  "query": "What are the procedures for emergency deployment?",
-  "top_k": 5
-}
-Response:
+---
 
-json
-Copy
-Edit
-{
-  "answer": "According to the manual, emergency deployment involves..."
-}
-📈 Next Steps
-Task	Status
-✅ OCR for scanned PDFs	Done
-✅ FastAPI backend with query endpoint	Done
-✅ Pinecone + OpenAI integration	Done
-❌ Switch to HuggingFace embeddings (optional)	🔜
-❌ Web frontend (HTML input + results)	🔜
-❌ Auth & document upload portal (multi-user)	🔜
-❌ Cost monitoring & rate-limit handling	🔜
-❌ Deploy to Render / EC2	🔜
+## ✍️ Notes
 
-💡 Tips
-Want to avoid OpenAI costs while developing? Swap embeddings for all-MiniLM-L6-v2 from HuggingFace (I can help you do this).
+* Tested on Python 3.13
+* Hugging Face token is required for private/public LLM access
+* If facing version warnings:
+  Install:
 
-Use tiktoken to estimate chunk token lengths for better LLM context handling.
+  ```bash
+  pip install -U langchain langchain-community huggingface-hub
+  ```
 
-Consider replacing deprecated LangchainPinecone with PineconeVectorStore.
-
-🤝 Credits
-Built with ❤️ using:
-
-FastAPI
-
-LangChain
-
-OpenAI
-
-Pinecone
-
-pdfminer.six
-
-PyMuPDF (fitz)
-
-Tesseract OCR
-
-📬 Contact
-Yashwanth Sai Tirukkovalluru
-Feel free to open issues or contact for deployment & scaling help.
-
-
+---
