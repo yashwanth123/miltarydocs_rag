@@ -5,16 +5,15 @@ from langchain_community.llms import HuggingFacePipeline
 from transformers import pipeline
 
 from backend.services.answer_builder import (
-    build_extractive_answer,
-    build_identity_answer,
-    build_meta_answer,
-    build_summary_answer,
+    build_answer_for_intent,
     build_vague_answer,
-    is_identity_question,
-    is_meta_question,
-    is_summarize_intent,
-    is_vague_question,
     is_weak_model_answer,
+)
+from backend.services.query_intent import (
+    Intent,
+    classify_intent,
+    expand_retrieval_queries,
+    is_vague_question,
 )
 from backend.utils.masking import filter_documents, mask_documents
 from backend.vector_store.chroma_client import collection_count, get_retriever
@@ -22,7 +21,7 @@ from backend.vector_store.chroma_client import collection_count, get_retriever
 load_dotenv()
 
 LLM_MODEL = os.getenv("LLM_MODEL", "google/flan-t5-large")
-SEARCH_K = int(os.getenv("SEARCH_K", "6"))
+SEARCH_K = int(os.getenv("SEARCH_K", "8"))
 USE_LLM = os.getenv("USE_LLM", "false").lower() == "true"
 
 _llm = None
@@ -63,6 +62,24 @@ def _maybe_enhance_with_llm(question: str, context: str, draft_answer: str) -> s
         return draft_answer
 
 
+def _retrieve_documents(question: str, intent: Intent) -> list:
+    retriever = get_retriever(search_k=SEARCH_K)
+    queries = expand_retrieval_queries(question, intent)
+
+    merged = []
+    seen_chunks: set[str] = set()
+
+    for query in queries:
+        for doc in retriever.get_relevant_documents(query):
+            key = doc.page_content[:120]
+            if key in seen_chunks:
+                continue
+            seen_chunks.add(key)
+            merged.append(doc)
+
+    return filter_documents(merged) or merged
+
+
 def ask_question(question: str, mask_sensitive: bool = True) -> dict:
     cleaned_question = question.strip()
 
@@ -75,30 +92,34 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
             "sources": [],
             "masked": mask_sensitive,
             "document_count": 0,
+            "intent": Intent.UNKNOWN.value,
         }
 
-    if is_vague_question(cleaned_question):
+    intent = classify_intent(cleaned_question)
+
+    if is_vague_question(cleaned_question, intent):
+        return {
+            "answer": build_vague_answer(Intent.UNKNOWN),
+            "sources": [],
+            "masked": mask_sensitive,
+            "document_count": collection_count(),
+            "intent": Intent.UNKNOWN.value,
+        }
+
+    docs = _retrieve_documents(cleaned_question, intent)
+
+    if not docs and intent not in {Intent.GREETING, Intent.HELP}:
         return {
             "answer": build_vague_answer(),
             "sources": [],
             "masked": mask_sensitive,
             "document_count": collection_count(),
+            "intent": intent.value,
         }
 
-    retriever = get_retriever(search_k=SEARCH_K)
-    raw_docs = retriever.get_relevant_documents(cleaned_question)
-    docs = filter_documents(raw_docs) or raw_docs
+    answer = build_answer_for_intent(intent, cleaned_question, docs, collection_count())
 
-    if is_meta_question(cleaned_question):
-        answer = build_meta_answer(cleaned_question, docs, collection_count())
-    elif is_identity_question(cleaned_question):
-        answer = build_identity_answer(docs)
-    elif is_summarize_intent(cleaned_question):
-        answer = build_summary_answer(docs)
-    elif not docs:
-        answer = build_vague_answer()
-    else:
-        answer = build_extractive_answer(cleaned_question, docs)
+    if intent == Intent.GENERAL and docs:
         context = "\n\n".join(doc.page_content for doc in docs[:3])
         answer = _maybe_enhance_with_llm(cleaned_question, context, answer)
 
@@ -109,4 +130,5 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
         "sources": sources,
         "masked": mask_sensitive,
         "document_count": collection_count(),
+        "intent": intent.value,
     }

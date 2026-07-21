@@ -1,0 +1,237 @@
+import re
+from enum import Enum
+
+
+class Intent(str, Enum):
+    GREETING = "greeting"
+    HELP = "help"
+    SUMMARIZE = "summarize"
+    IDENTITY = "identity"
+    CHAIN_OF_COMMAND = "chain_of_command"
+    SKILLS = "skills"
+    STANDARDS = "standards"
+    LIST = "list"
+    GENERAL = "general"
+    UNKNOWN = "unknown"
+
+
+CONTRACTIONS = {
+    "whats": "what is",
+    "what's": "what is",
+    "whos": "who is",
+    "who's": "who is",
+    "wheres": "where is",
+    "where's": "where is",
+    "hows": "how is",
+    "how's": "how is",
+    "dont": "do not",
+    "doesnt": "does not",
+    "cant": "can not",
+    "im": "i am",
+    "i'm": "i am",
+    "youre": "you are",
+    "you're": "you are",
+}
+
+INTENT_RULES: list[tuple[Intent, list[str]]] = [
+    (Intent.GREETING, [
+        r"^(hi|hello|hey|good morning|good afternoon|good evening)\b",
+        r"^(howdy|greetings)\b",
+    ]),
+    (Intent.HELP, [
+        r"what can i ask",
+        r"what should i ask",
+        r"what (can|could) (you|u) (answer|do|help)",
+        r"what can you help",
+        r"how does this work",
+        r"how (do|can) i use",
+        r"^(help|help me)\b",
+        r"example questions",
+        r"give me examples",
+        r"what (is this|are these) (for|about)",
+        r"what(s| is) this about",
+        r"what is this (app|tool|system|chatbot)",
+    ]),
+    (Intent.SUMMARIZE, [
+        r"summarize",
+        r"summary",
+        r"give me (a |an )?(quick )?(summary|overview|recap)",
+        r"brief me",
+        r"brief(ly)? (on|about|explain|describe)",
+        r"main (points|topics|ideas|takeaways)",
+        r"key (points|topics|ideas|takeaways)",
+        r"\btldr\b",
+        r"high level (view|overview)",
+        r"what are these documents about",
+        r"what do (the|these|my) documents (say|cover|contain)",
+    ]),
+    (Intent.IDENTITY, [
+        r"who am i",
+        r"about me\b",
+        r"my background",
+        r"my profile",
+        r"tell me about myself",
+        r"what do you know about me",
+        r"who is yashwanth",
+        r"describe me\b",
+        r"my experience\b",
+        r"what is my role",
+    ]),
+    (Intent.CHAIN_OF_COMMAND, [
+        r"chain of command",
+        r"command hierarchy",
+        r"order of authority",
+        r"line of authority",
+        r"leadership structure",
+        r"unity of command",
+        r"span of control",
+        r"who reports to whom",
+        r"reporting structure",
+        r"levels of command",
+        r"military hierarchy",
+        r"explain (the )?hierarchy",
+        r"how (does|do) orders flow",
+    ]),
+    (Intent.SKILLS, [
+        r"\bskills\b",
+        r"\bqualifications\b",
+        r"technical skills",
+        r"what (skills|technologies|tools)",
+        r"work experience",
+        r"job experience",
+        r"resume",
+        r"what (does|did) .* (know|do)",
+        r"ml experience",
+        r"software engineer",
+    ]),
+    (Intent.STANDARDS, [
+        r"mil-std",
+        r"mil-prf",
+        r"military standard",
+        r"military reference",
+        r"which standards",
+        r"referenced standards",
+        r"what standards",
+    ]),
+    (Intent.LIST, [
+        r"^list\b",
+        r"enumerate",
+        r"what are the (steps|levels|principles|items)",
+        r"give me (all|the) (steps|levels|principles)",
+    ]),
+]
+
+TOPIC_SEARCH_EXPANSIONS = {
+    Intent.CHAIN_OF_COMMAND: [
+        "military chain of command authority responsibility orders",
+        "unity of command span of control delegation president secretary defense",
+    ],
+    Intent.SKILLS: [
+        "skills experience qualifications technologies resume engineer",
+    ],
+    Intent.STANDARDS: [
+        "MIL-STD MIL-PRF military references standards specifications",
+    ],
+    Intent.IDENTITY: [
+        "name experience skills background resume profile engineer",
+    ],
+    Intent.SUMMARIZE: [
+        "main topics key points overview summary document content",
+    ],
+}
+
+TOKEN_SYNONYMS = {
+    "command": {"chain", "hierarchy", "authority", "leadership", "orders", "superior"},
+    "summarize": {"summary", "overview", "recap", "brief", "tldr", "gist"},
+    "skill": {"skills", "experience", "qualification", "technology", "expertise"},
+    "standard": {"standards", "mil", "reference", "specification"},
+    "document": {"documents", "file", "files", "pdf", "content", "text"},
+    "military": {"army", "defense", "doctrine", "service"},
+}
+
+
+def normalize_question(question: str) -> str:
+    q = question.strip().lower()
+    q = re.sub(r"[^\w\s'?-]", " ", q)
+    q = re.sub(r"\s+", " ", q)
+
+    for src, dst in CONTRACTIONS.items():
+        q = re.sub(rf"\b{re.escape(src)}\b", dst, q)
+
+    return q.strip()
+
+
+def classify_intent(question: str) -> Intent:
+    normalized = normalize_question(question)
+
+    if not normalized:
+        return Intent.UNKNOWN
+
+    if len(normalized.split()) <= 1 and normalized in {"where", "who", "why", "how", "what"}:
+        return Intent.UNKNOWN
+
+    best_intent = Intent.GENERAL
+    best_score = 0
+
+    for intent, patterns in INTENT_RULES:
+        score = 0
+        for pattern in patterns:
+            if re.search(pattern, normalized):
+                score += 2 if pattern.startswith("^") else 1
+        if score > best_score:
+            best_score = score
+            best_intent = intent
+
+    if best_score == 0:
+        if any(word in normalized for word in ("explain", "describe", "define", "tell me about", "what is", "what are")):
+            return Intent.GENERAL
+        return Intent.GENERAL
+
+    return best_intent
+
+
+def is_vague_question(question: str, intent: Intent) -> bool:
+    if intent not in {Intent.UNKNOWN, Intent.GENERAL}:
+        return False
+
+    normalized = normalize_question(question)
+    words = normalized.split()
+
+    if len(words) <= 1:
+        return True
+    if len(words) == 2 and len(normalized) < 14:
+        return True
+    return normalized in {"where", "who", "why", "how", "what", "when"}
+
+
+def expand_retrieval_queries(question: str, intent: Intent) -> list[str]:
+    queries = [question.strip()]
+    normalized = normalize_question(question)
+
+    expansions = TOPIC_SEARCH_EXPANSIONS.get(intent, [])
+    queries.extend(expansions)
+
+    if intent == Intent.GENERAL:
+        if "command" in normalized or "hierarchy" in normalized:
+            queries.extend(TOPIC_SEARCH_EXPANSIONS[Intent.CHAIN_OF_COMMAND])
+        if "resume" in normalized or "skill" in normalized:
+            queries.extend(TOPIC_SEARCH_EXPANSIONS[Intent.SKILLS])
+
+    seen = set()
+    unique = []
+    for query in queries:
+        key = query.lower().strip()
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(query)
+    return unique
+
+
+def expand_tokens(tokens: set[str]) -> set[str]:
+    expanded = set(tokens)
+    for token in list(tokens):
+        for root, synonyms in TOKEN_SYNONYMS.items():
+            if token == root or token in synonyms:
+                expanded.add(root)
+                expanded.update(synonyms)
+    return expanded
