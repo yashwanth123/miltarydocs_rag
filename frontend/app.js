@@ -16,7 +16,7 @@ const uploadStatus = document.getElementById("uploadStatus");
 const PROMPT_MAP = {
   Doctrine: "Explain the military chain of command",
   Summary: "Summarize the indexed documents",
-  Guide: "What can I ask?",
+  Standards: "Which MIL-STD references are cited?",
 };
 
 function autoResize(textarea) {
@@ -186,7 +186,7 @@ async function uploadFiles(fileListInput) {
     await refreshHealth();
     createMessage(
       "bot",
-      `Upload complete — ${data.indexed_chunks} passages are now indexed. Ask me anything about your documents.`
+      `Upload complete — ${data.indexed_chunks} military document passages are now indexed. Ask about doctrine, standards, or chain of command.`
     );
   } catch (error) {
     uploadStatus.classList.add("error");
@@ -235,7 +235,7 @@ clearChatButton.addEventListener("click", () => {
   messagesEl.innerHTML = "";
   createMessage(
     "bot",
-    "Fresh start. Upload a document or ask me anything about chain of command, summaries, skills, or military standards."
+    "Fresh start. Upload military doctrine or technical manuals, then ask about chain of command, summaries, or MIL-STD standards."
   );
 });
 

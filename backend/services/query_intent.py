@@ -7,9 +7,8 @@ class Intent(str, Enum):
     CHAT = "chat"
     HELP = "help"
     SUMMARIZE = "summarize"
-    IDENTITY = "identity"
     CHAIN_OF_COMMAND = "chain_of_command"
-    SKILLS = "skills"
+    TRAINING = "training"
     STANDARDS = "standards"
     LIST = "list"
     GENERAL = "general"
@@ -66,18 +65,6 @@ INTENT_RULES: list[tuple[Intent, list[str]]] = [
         r"what are these documents about",
         r"what do (the|these|my) documents (say|cover|contain)",
     ]),
-    (Intent.IDENTITY, [
-        r"who am i",
-        r"about me\b",
-        r"my background",
-        r"my profile",
-        r"tell me about myself",
-        r"what do you know about me",
-        r"who is yashwanth",
-        r"describe me\b",
-        r"my experience\b",
-        r"what is my role",
-    ]),
     (Intent.CHAIN_OF_COMMAND, [
         r"chain of command",
         r"command hierarchy",
@@ -93,17 +80,14 @@ INTENT_RULES: list[tuple[Intent, list[str]]] = [
         r"explain (the )?hierarchy",
         r"how (does|do) orders flow",
     ]),
-    (Intent.SKILLS, [
-        r"\bskills\b",
+    (Intent.TRAINING, [
+        r"\btraining\b",
         r"\bqualifications\b",
-        r"technical skills",
-        r"what (skills|technologies|tools)",
-        r"work experience",
-        r"job experience",
-        r"resume",
-        r"what (does|did) .* (know|do)",
-        r"ml experience",
-        r"software engineer",
+        r"military training",
+        r"required training",
+        r"technical manual",
+        r"field manual",
+        r"what (does|do) the (manual|document|regulation)",
     ]),
     (Intent.STANDARDS, [
         r"mil-std",
@@ -127,24 +111,21 @@ TOPIC_SEARCH_EXPANSIONS = {
         "military chain of command authority responsibility orders",
         "unity of command span of control delegation president secretary defense",
     ],
-    Intent.SKILLS: [
-        "skills experience qualifications technologies resume engineer",
+    Intent.TRAINING: [
+        "military training qualifications requirements procedures doctrine",
     ],
     Intent.STANDARDS: [
         "MIL-STD MIL-PRF military references standards specifications",
     ],
-    Intent.IDENTITY: [
-        "name experience skills background resume profile engineer",
-    ],
     Intent.SUMMARIZE: [
-        "main topics key points overview summary document content",
+        "main topics key points overview summary military document content doctrine",
     ],
 }
 
 TOKEN_SYNONYMS = {
     "command": {"chain", "hierarchy", "authority", "leadership", "orders", "superior"},
     "summarize": {"summary", "overview", "recap", "brief", "tldr", "gist"},
-    "skill": {"skills", "experience", "qualification", "technology", "expertise"},
+    "training": {"qualification", "requirements", "procedure", "doctrine", "manual"},
     "standard": {"standards", "mil", "reference", "specification"},
     "document": {"documents", "file", "files", "pdf", "content", "text"},
     "military": {"army", "defense", "doctrine", "service"},
@@ -157,6 +138,20 @@ CASUAL_EXACT = {
 }
 
 NO_RETRIEVAL_INTENTS = {Intent.GREETING, Intent.CHAT, Intent.HELP}
+
+OUT_OF_SCOPE_PATTERNS = (
+    "who am i",
+    "about me",
+    "my resume",
+    "my profile",
+    "tell me about myself",
+    "my background",
+)
+
+
+def is_out_of_scope(question: str) -> bool:
+    normalized = normalize_question(question)
+    return any(pattern in normalized for pattern in OUT_OF_SCOPE_PATTERNS)
 
 
 def normalize_question(question: str) -> str:
@@ -242,8 +237,8 @@ def expand_retrieval_queries(question: str, intent: Intent) -> list[str]:
     if intent == Intent.GENERAL:
         if "command" in normalized or "hierarchy" in normalized:
             queries.extend(TOPIC_SEARCH_EXPANSIONS[Intent.CHAIN_OF_COMMAND])
-        if "resume" in normalized or "skill" in normalized:
-            queries.extend(TOPIC_SEARCH_EXPANSIONS[Intent.SKILLS])
+        if "training" in normalized or "manual" in normalized or "regulation" in normalized:
+            queries.extend(TOPIC_SEARCH_EXPANSIONS[Intent.TRAINING])
 
     seen = set()
     unique = []

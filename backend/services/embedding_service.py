@@ -6,6 +6,7 @@ from transformers import pipeline
 
 from backend.services.answer_builder import (
     build_answer_for_intent,
+    build_out_of_scope_answer,
     build_vague_answer,
     is_weak_model_answer,
 )
@@ -14,6 +15,7 @@ from backend.services.query_intent import (
     NO_RETRIEVAL_INTENTS,
     classify_intent,
     expand_retrieval_queries,
+    is_out_of_scope,
     is_vague_question,
 )
 from backend.utils.masking import filter_documents, mask_documents
@@ -88,9 +90,9 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
     if doc_count == 0:
         return {
             "answer": (
-                "Hey — I don't have any documents indexed yet. "
-                "Use the Upload panel on the left to add a PDF, DOCX, or TXT file, "
-                "then ask me questions about it."
+                "Hey — no military documents are indexed yet. "
+                "Use the Upload panel to add doctrine, regulations, or technical manuals, "
+                "then ask questions about them."
             ),
             "sources": [],
             "masked": mask_sensitive,
@@ -99,6 +101,15 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
         }
 
     intent = classify_intent(cleaned_question)
+
+    if is_out_of_scope(cleaned_question):
+        return {
+            "answer": build_out_of_scope_answer(),
+            "sources": [],
+            "masked": mask_sensitive,
+            "document_count": doc_count,
+            "intent": "out_of_scope",
+        }
 
     if intent in NO_RETRIEVAL_INTENTS:
         return {

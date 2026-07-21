@@ -9,9 +9,6 @@ PHRASING_CASES = [
     ("who reports to whom", Intent.CHAIN_OF_COMMAND),
     ("give me an overview of the docs", Intent.SUMMARIZE),
     ("brief me on the documents", Intent.SUMMARIZE),
-    ("who am i", Intent.IDENTITY),
-    ("tell me about myself", Intent.IDENTITY),
-    ("what skills are listed", Intent.SKILLS),
     ("mil-std references", Intent.STANDARDS),
     ("what can you help with", Intent.HELP),
     ("how does this work", Intent.HELP),
@@ -33,7 +30,14 @@ def test_answers_are_substantive() -> None:
         assert "intent" in result
 
 
+def test_out_of_scope_personal_questions() -> None:
+    result = ask_question("who am i")
+    assert result["intent"] == "out_of_scope"
+    assert "military documents" in result["answer"].lower()
+
+
 if __name__ == "__main__":
     test_intent_classification()
     test_answers_are_substantive()
+    test_out_of_scope_personal_questions()
     print("All phrasing tests passed.")

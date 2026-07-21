@@ -60,31 +60,36 @@ def is_header_only_sentence(sentence: str) -> bool:
     return False
 
 
+def build_out_of_scope_answer() -> str:
+    return (
+        "This assistant is for military documents only — doctrine, regulations, technical manuals, "
+        "and standards like MIL-STD. Upload those files and ask about their content."
+    )
+
+
 def build_vague_answer(intent: Intent | None = None) -> str:
     if intent == Intent.UNKNOWN:
         return (
-            "I didn't quite catch a document question there. "
-            "Try something like \"summarize my documents\" or \"explain the chain of command\" — "
-            "or upload a PDF/DOCX using the Upload panel on the left."
+            "I didn't catch a military document question. Try asking about chain of command, "
+            "summaries of indexed doctrine, or MIL-STD references — or upload a military PDF/DOCX."
         )
 
     return (
-        "I searched your indexed files but couldn't find a strong match for that question. "
-        "Try rephrasing it, upload more documents, or ask about chain of command, summaries, skills, or MIL-STD references."
+        "I couldn't find a strong match in your military documents. "
+        "Try rephrasing or upload additional doctrine, regulations, or technical manuals."
     )
 
 
 def build_greeting_answer(document_count: int) -> str:
     if document_count == 0:
         return (
-            "Hey! I'm your local document assistant — everything runs on your machine, no cloud API needed. "
-            "Upload a PDF, DOCX, or TXT file using the sidebar, then ask me anything about its content."
+            "Hey! I'm your local military document assistant — everything runs on your machine. "
+            "Upload military PDFs, doctrine, or technical manuals using the sidebar, then ask questions."
         )
 
     return (
-        f"Hey! Good to see you. I've got {document_count} passages indexed and ready to search. "
-        "Ask me naturally — summarize your files, explain chain of command, pull skills from a resume, "
-        "or upload new documents anytime from the sidebar."
+        f"Hey! I have {document_count} military document passages indexed and ready. "
+        "Ask about chain of command, doctrine summaries, MIL-STD references, or regulations in your files."
     )
 
 
@@ -99,7 +104,7 @@ def build_casual_answer(question: str, document_count: int) -> str:
         "thanks": "You're welcome. Happy to help with your documents anytime.",
         "thank you": "You're welcome. Just ask when you need something from your files.",
         "ty": "Anytime. Fire away with a document question when you're ready.",
-        "hype": "I like the energy. Upload a resume or military doc and I'll answer questions from it right away.",
+        "hype": "I like the energy. Upload a military PDF or doctrine file and I'll answer questions from it right away.",
         "heee": "Hey there. I'm ready when you are — try asking about your documents or upload a new file.",
         "lol": "Ha — I'm better with document questions than jokes. Try \"summarize my files\" or \"explain chain of command.\"",
         "haha": "Glad you're amused. When you're ready, I can search and summarize your uploaded documents.",
@@ -112,8 +117,8 @@ def build_casual_answer(question: str, document_count: int) -> str:
         return responses[normalized]
 
     return (
-        "I'm here to help with your documents. Upload a file on the left, or ask something specific "
-        "like \"summarize the documents\" or \"what is the chain of command.\""
+        "I'm here to help with military documents. Upload doctrine or technical manuals on the left, "
+        "or ask about chain of command, summaries, or MIL-STD standards."
     )
 
 
@@ -128,10 +133,10 @@ def build_meta_answer(question: str, documents: list, document_count: int) -> st
     file_hint = ", ".join(sources[:4]) if sources else "your uploaded files"
 
     return (
-        f"I read from {file_hint} ({document_count} indexed passages) and answer using retrieved content — "
-        "not from general internet knowledge.\n\n"
-        "You can ask naturally: explain a topic, summarize files, list standards, "
-        "or ask about skills and experience in a resume. Upload more files anytime from the sidebar."
+        f"I search military documents in {file_hint} ({document_count} indexed passages) and answer "
+        "from retrieved content — not general internet knowledge.\n\n"
+        "Ask about doctrine, chain of command, regulations, technical manuals, or MIL-STD references. "
+        "Upload more military files anytime from the sidebar."
     )
 
 
@@ -169,35 +174,24 @@ def build_summary_answer(documents: list) -> str:
     return intro + "\n\n".join(f"• {sentence}" for sentence in chosen)
 
 
-def build_identity_answer(documents: list) -> str:
-    role_patterns = re.compile(
-        r"\b(engineer|developer|scientist|manager|analyst|experience|skills|machine learning|software)\b",
-        re.I,
-    )
-
+def build_training_answer(documents: list) -> str:
     hits: list[str] = []
+    seen: set[str] = set()
+    markers = ("training", "qualification", "procedure", "doctrine", "manual", "regulation", "requirement")
+
     for doc in documents:
-        source = doc.metadata.get("source", "").lower() if getattr(doc, "metadata", None) else ""
         for sentence in _split_sentences(doc.page_content):
-            if "resume" in source or role_patterns.search(sentence):
+            lower = sentence.lower()
+            if any(marker in lower for marker in markers) and lower not in seen:
+                seen.add(lower)
                 hits.append(sentence)
 
     if hits:
-        unique: list[str] = []
-        seen: set[str] = set()
-        for hit in hits[:5]:
-            if hit.lower() not in seen:
-                seen.add(hit.lower())
-                unique.append(hit)
-        return "Based on the indexed documents, here is what I found:\n\n" + "\n\n".join(
-            f"• {line}" for line in unique
+        return "Training and procedural details from your military documents:\n\n" + "\n\n".join(
+            f"• {line}" for line in hits[:5]
         )
 
-    return (
-        "I do not see personal profile details in the indexed documents yet.\n\n"
-        "Add your resume PDF or DOCX to data/ and run:\n"
-        "python scripts/ingest_documents.py --reset"
-    )
+    return build_vague_answer()
 
 
 def build_chain_of_command_answer(documents: list) -> str:
@@ -224,27 +218,6 @@ def build_chain_of_command_answer(documents: list) -> str:
         )
 
     return build_extractive_answer("military chain of command authority responsibility", documents)
-
-
-def build_skills_answer(documents: list) -> str:
-    hits: list[str] = []
-    seen: set[str] = set()
-
-    skill_markers = ("skill", "experience", "technology", "engineer", "python", "machine learning", "developed", "built")
-
-    for doc in documents:
-        for sentence in _split_sentences(doc.page_content):
-            lower = sentence.lower()
-            if any(marker in lower for marker in skill_markers) and sentence.lower() not in seen:
-                seen.add(sentence.lower())
-                hits.append(sentence)
-
-    if hits:
-        return "Skills and experience mentioned in the documents:\n\n" + "\n\n".join(
-            f"• {line}" for line in hits[:5]
-        )
-
-    return build_vague_answer()
 
 
 def build_standards_answer(documents: list) -> str:
@@ -350,12 +323,10 @@ def build_answer_for_intent(intent: Intent, question: str, documents: list, docu
         return build_meta_answer(question, documents, document_count)
     if intent == Intent.SUMMARIZE:
         return build_summary_answer(documents)
-    if intent == Intent.IDENTITY:
-        return build_identity_answer(documents)
     if intent == Intent.CHAIN_OF_COMMAND:
         return build_chain_of_command_answer(documents)
-    if intent == Intent.SKILLS:
-        return build_skills_answer(documents)
+    if intent == Intent.TRAINING:
+        return build_training_answer(documents)
     if intent == Intent.STANDARDS:
         return build_standards_answer(documents)
     if intent == Intent.LIST:
