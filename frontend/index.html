@@ -3,93 +3,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MilitaryDocs RAG</title>
+  <title>DocChat — Local RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <div class="app">
+  <div class="layout">
     <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-icon">⚔</div>
+      <div class="logo">
+        <div class="logo-mark">DC</div>
         <div>
-          <h1>MilitaryDocs RAG</h1>
-          <p>Free local document assistant</p>
+          <h1>DocChat</h1>
+          <p>Local document assistant</p>
         </div>
       </div>
 
-      <div class="status-card" id="statusCard">
-        <span class="status-dot"></span>
-        <div>
-          <strong id="statusLabel">Checking backend...</strong>
-          <p id="statusDetail">Waiting for health check</p>
+      <div class="card status-card" id="statusCard">
+        <div class="status-row">
+          <span class="status-dot"></span>
+          <div>
+            <strong id="statusLabel">Connecting...</strong>
+            <p id="statusDetail">Checking backend</p>
+          </div>
         </div>
       </div>
 
-      <div class="panel">
-        <h2>Privacy masking</h2>
-        <label class="toggle">
-          <input type="checkbox" id="maskToggle" checked />
-          <span class="slider"></span>
+      <div class="card">
+        <div class="card-title">Privacy masking</div>
+        <label class="switch-row">
+          <span>Redact sources only</span>
+          <label class="switch">
+            <input type="checkbox" id="maskToggle" checked />
+            <span class="switch-slider"></span>
+          </label>
         </label>
-        <p class="panel-copy">
-          When enabled, responses and source snippets redact SSNs, emails, phone numbers,
-          and classification markings before display.
-        </p>
+        <p class="hint">Masking applies to source snippets, not the main answer.</p>
       </div>
 
-      <div class="panel">
-        <h2>How to use</h2>
-        <ol>
-          <li>Add PDF or TXT files to <code>data/</code></li>
-          <li>Run <code>python scripts/ingest_documents.py --reset</code></li>
-          <li>Ask questions about your documents</li>
-        </ol>
+      <div class="card">
+        <div class="card-title">Suggested prompts</div>
+        <div class="chips" id="promptChips">
+          <button type="button" class="chip">What is the chain of command?</button>
+          <button type="button" class="chip">Summarize the indexed documents</button>
+          <button type="button" class="chip">What can I ask?</button>
+        </div>
       </div>
 
-      <button class="ghost-button" id="clearChat">Clear conversation</button>
+      <button class="btn-secondary" id="clearChat">Clear chat</button>
     </aside>
 
-    <main class="chat">
-      <header class="chat-header">
+    <main class="main">
+      <header class="topbar">
         <div>
-          <h2>Document Q&amp;A</h2>
-          <p>Powered by Hugging Face + ChromaDB — fully free and local</p>
+          <h2>Ask your documents</h2>
+          <p>Free local RAG · Hugging Face + ChromaDB</p>
         </div>
       </header>
 
-      <section class="messages" id="messages">
-        <article class="message assistant">
-          <div class="bubble">
-            Welcome. Ask about chain of command, regulations, equipment, or any content
-            in your indexed military documents.
+      <section class="thread" id="messages">
+        <div class="msg assistant">
+          <div class="avatar">AI</div>
+          <div class="content">
+            <div class="text">
+              Upload documents to <code>data/</code>, run ingestion, then ask specific questions.
+              I answer from retrieved passages — try one of the suggested prompts on the left.
+            </div>
           </div>
-        </article>
+        </div>
       </section>
 
       <form class="composer" id="chatForm">
-        <textarea
-          id="queryInput"
-          rows="2"
-          placeholder="Ask a question about your military documents..."
-          required
-        ></textarea>
-        <button type="submit" id="sendButton">Send</button>
+        <div class="composer-box">
+          <textarea
+            id="queryInput"
+            rows="1"
+            placeholder="Ask about content in your documents..."
+            required
+          ></textarea>
+          <button type="submit" id="sendButton" aria-label="Send">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 19V5M5 12l7-7 7 7"/>
+            </svg>
+          </button>
+        </div>
       </form>
     </main>
   </div>
-
-  <template id="messageTemplate">
-    <article class="message">
-      <div class="bubble"></div>
-    </article>
-  </template>
-
-  <template id="sourcesTemplate">
-    <div class="sources">
-      <h3>Sources</h3>
-      <ul></ul>
-    </div>
-  </template>
 
   <script src="/static/app.js"></script>
 </body>

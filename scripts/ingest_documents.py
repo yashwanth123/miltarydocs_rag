@@ -5,6 +5,7 @@ from langchain_core.documents import Document
 
 from backend.utils.chunker import chunk_text
 from backend.utils.docx_parser import extract_text_from_docx
+from backend.utils.masking import is_low_quality_chunk
 from backend.utils.pdf_parser import extract_text_from_pdf
 from backend.vector_store.chroma_client import add_to_index, collection_count, reset_collection
 from scripts.reference_detector import detect_references
@@ -36,6 +37,8 @@ def ingest_file(file_path: Path) -> list[Document]:
         chunks = chunk_text(page_text)
         refs = detect_references(page_text)
         for chunk in chunks:
+            if is_low_quality_chunk(chunk):
+                continue
             documents.append(
                 Document(
                     page_content=chunk,
