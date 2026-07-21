@@ -63,6 +63,10 @@ def mask_documents(documents: list, enabled: bool = True) -> list[dict]:
                 "content": mask_text(content, enabled=enabled),
                 "source": metadata.get("source", "unknown"),
                 "page": metadata.get("page"),
+                "branch": metadata.get("branch"),
+                "topic": metadata.get("topic"),
+                "title": metadata.get("title"),
+                "source_url": metadata.get("source_url"),
             }
         )
     return results

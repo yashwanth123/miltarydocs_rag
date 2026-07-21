@@ -7,6 +7,7 @@ class Intent(str, Enum):
     CHAT = "chat"
     HELP = "help"
     SUMMARIZE = "summarize"
+    RECRUITING = "recruiting"
     CHAIN_OF_COMMAND = "chain_of_command"
     TRAINING = "training"
     STANDARDS = "standards"
@@ -65,6 +66,24 @@ INTENT_RULES: list[tuple[Intent, list[str]]] = [
         r"what are these documents about",
         r"what do (the|these|my) documents (say|cover|contain)",
     ]),
+    (Intent.RECRUITING, [
+        r"\bjoin(ing)? (the )?(military|army|navy|marines|air force|coast guard|space force)\b",
+        r"\benlist",
+        r"\brecruit",
+        r"\bmeps\b",
+        r"\basvab\b",
+        r"\bgi bill\b",
+        r"\bbenefits\b",
+        r"\bbasic training\b",
+        r"\bboot camp\b",
+        r"\bhow (do|can) i (join|enlist|become)",
+        r"\bchoose (a |my )?branch\b",
+        r"\bwhich branch\b",
+        r"\bofficer (candidate|path|program)\b",
+        r"\brotc\b",
+        r"\bmilitary pay\b",
+        r"\brank structure\b",
+    ]),
     (Intent.CHAIN_OF_COMMAND, [
         r"chain of command",
         r"command hierarchy",
@@ -107,6 +126,10 @@ INTENT_RULES: list[tuple[Intent, list[str]]] = [
 ]
 
 TOPIC_SEARCH_EXPANSIONS = {
+    Intent.RECRUITING: [
+        "enlistment process MEPS ASVAB basic training benefits GI Bill recruiter",
+        "join military branch eligibility requirements medical standards",
+    ],
     Intent.CHAIN_OF_COMMAND: [
         "military chain of command authority responsibility orders",
         "unity of command span of control delegation president secretary defense",
@@ -128,7 +151,9 @@ TOKEN_SYNONYMS = {
     "training": {"qualification", "requirements", "procedure", "doctrine", "manual"},
     "standard": {"standards", "mil", "reference", "specification"},
     "document": {"documents", "file", "files", "pdf", "content", "text"},
-    "military": {"army", "defense", "doctrine", "service"},
+    "military": {"army", "defense", "doctrine", "service", "navy", "marines", "recruit", "enlist"},
+    "join": {"enlist", "recruit", "meps", "asvab", "training", "basic"},
+    "benefits": {"gi", "bill", "tricare", "bah", "pay", "allowance", "retirement"},
 }
 
 CASUAL_EXACT = {
@@ -235,6 +260,8 @@ def expand_retrieval_queries(question: str, intent: Intent) -> list[str]:
     queries.extend(expansions)
 
     if intent == Intent.GENERAL:
+        if any(token in normalized for token in ("join", "enlist", "meps", "asvab", "recruit", "benefits")):
+            queries.extend(TOPIC_SEARCH_EXPANSIONS[Intent.RECRUITING])
         if "command" in normalized or "hierarchy" in normalized:
             queries.extend(TOPIC_SEARCH_EXPANSIONS[Intent.CHAIN_OF_COMMAND])
         if "training" in normalized or "manual" in normalized or "regulation" in normalized:

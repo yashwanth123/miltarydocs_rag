@@ -1,0 +1,31 @@
+---
+branch: general
+topic: meps
+doc_type: guide
+source_url: https://www.military.com/join-armed-forces/meps-overview.html
+title: MEPS Process Guide
+---
+
+# MEPS — Military Entrance Processing Station
+
+MEPS is where applicants complete medical screening, aptitude testing verification, and enlistment processing before shipping to training.
+
+## What happens at MEPS
+
+Applicants typically complete the ASVAB (if not already taken), a full medical examination, vision and hearing tests, urinalysis, and a review of medical history. A MEPS physician determines whether an applicant meets medical accession standards or needs additional records or waivers.
+
+## What to bring
+
+Bring a valid government ID, Social Security card, birth certificate or passport, high school diploma or transcripts, medical records for ongoing conditions, and recruiter-provided paperwork. Dress in comfortable clothing; you may be asked to perform basic physical movements during the medical exam.
+
+## Timeline
+
+MEPS can take one full day or require a return visit if additional medical consultation is needed. Some applicants receive same-day contracts; others return after waiver review. Your recruiter schedules MEPS and explains branch-specific requirements.
+
+## Medical standards
+
+Standards cover vision, hearing, weight, mental health history, prior surgeries, medications, and chronic conditions. Some conditions are permanently disqualifying; others may qualify for waiver review. Do not assume eligibility based on online lists — MEPS makes the official determination.
+
+## After MEPS
+
+If qualified, you discuss job availability, training pipelines, and enlistment contract terms with your service liaison. Upon signing, you receive a ship date for basic training or officer training as applicable.

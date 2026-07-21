@@ -350,6 +350,40 @@ body {
   margin-top: 12px;
 }
 
+.branch-select {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  font: inherit;
+}
+
+.disclaimer {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 199, 106, 0.25);
+  background: rgba(245, 199, 106, 0.08);
+  color: var(--gold);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.source-link {
+  display: inline-block;
+  margin: 4px 0 6px;
+  color: var(--cyan);
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.source-link:hover {
+  text-decoration: underline;
+}
+
 .prompt-card {
   text-align: left;
   border: 1px solid rgba(255,255,255,0.08);

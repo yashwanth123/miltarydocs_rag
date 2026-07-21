@@ -8,6 +8,7 @@ from backend.services.answer_builder import (
     build_vague_answer,
     is_weak_model_answer,
 )
+from backend.services.guardrails import apply_answer_guardrails
 from backend.services.query_intent import (
     Intent,
     NO_RETRIEVAL_INTENTS,
@@ -16,14 +17,13 @@ from backend.services.query_intent import (
     is_out_of_scope,
     is_vague_question,
 )
+from backend.services.retrieval_service import hybrid_retrieve
 from backend.utils.masking import filter_documents, mask_documents
-from backend.vector_store.chroma_client import collection_count, get_retriever
+from backend.vector_store.chroma_client import collection_count
 
 load_dotenv()
 
 LLM_MODEL = os.getenv("LLM_MODEL", "google/flan-t5-large")
-SEARCH_K = int(os.getenv("SEARCH_K", "4"))
-MAX_RETRIEVAL_QUERIES = int(os.getenv("MAX_RETRIEVAL_QUERIES", "2"))
 USE_LLM = os.getenv("USE_LLM", "false").lower() == "true"
 
 _llm = None
@@ -67,39 +67,32 @@ def _maybe_enhance_with_llm(question: str, context: str, draft_answer: str) -> s
         return draft_answer
 
 
-def _retrieve_documents(question: str, intent: Intent) -> list:
-    retriever = get_retriever(search_k=SEARCH_K)
-    queries = expand_retrieval_queries(question, intent)[:MAX_RETRIEVAL_QUERIES]
-
-    merged = []
-    seen_chunks: set[str] = set()
-
-    for query in queries:
-        for doc in retriever.invoke(query):
-            key = doc.page_content[:120]
-            if key in seen_chunks:
-                continue
-            seen_chunks.add(key)
-            merged.append(doc)
-
-    return filter_documents(merged) or merged
+def _retrieve_documents(question: str, intent: Intent, branch: str | None = None) -> list:
+    queries = expand_retrieval_queries(question, intent)
+    docs = hybrid_retrieve(queries, branch=branch)
+    return filter_documents(docs) or docs
 
 
-def ask_question(question: str, mask_sensitive: bool = True) -> dict:
+def ask_question(
+    question: str,
+    mask_sensitive: bool = True,
+    branch: str | None = None,
+) -> dict:
     cleaned_question = question.strip()
     doc_count = collection_count()
+    branch_filter = None if not branch or branch == "all" else branch
 
     if doc_count == 0:
         return {
             "answer": (
-                "Hey — no military documents are indexed yet. "
-                "Use the Upload panel to add doctrine, regulations, or technical manuals, "
-                "then ask questions about them."
+                "No guides are indexed yet. Run: python scripts/ingest_documents.py --reset "
+                "to load public recruit guides, or upload PDFs from the sidebar."
             ),
             "sources": [],
             "masked": mask_sensitive,
             "document_count": 0,
             "intent": Intent.UNKNOWN.value,
+            "branch": branch_filter or "all",
         }
 
     intent = classify_intent(cleaned_question)
@@ -111,15 +104,18 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
             "masked": mask_sensitive,
             "document_count": doc_count,
             "intent": "out_of_scope",
+            "branch": branch_filter or "all",
         }
 
     if intent in NO_RETRIEVAL_INTENTS:
+        answer = build_answer_for_intent(intent, cleaned_question, [], doc_count)
         return {
-            "answer": build_answer_for_intent(intent, cleaned_question, [], doc_count),
+            "answer": apply_answer_guardrails(cleaned_question, answer),
             "sources": [],
             "masked": mask_sensitive,
             "document_count": doc_count,
             "intent": intent.value,
+            "branch": branch_filter or "all",
         }
 
     if is_vague_question(cleaned_question, intent):
@@ -129,9 +125,10 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
             "masked": mask_sensitive,
             "document_count": doc_count,
             "intent": Intent.UNKNOWN.value,
+            "branch": branch_filter or "all",
         }
 
-    docs = _retrieve_documents(cleaned_question, intent)
+    docs = _retrieve_documents(cleaned_question, intent, branch=branch_filter)
 
     if not docs:
         return {
@@ -140,14 +137,16 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
             "masked": mask_sensitive,
             "document_count": doc_count,
             "intent": intent.value,
+            "branch": branch_filter or "all",
         }
 
     answer = build_answer_for_intent(intent, cleaned_question, docs, doc_count)
 
-    if intent == Intent.GENERAL and docs:
+    if intent in {Intent.GENERAL, Intent.RECRUITING} and docs:
         context = "\n\n".join(doc.page_content for doc in docs[:3])
         answer = _maybe_enhance_with_llm(cleaned_question, context, answer)
 
+    answer = apply_answer_guardrails(cleaned_question, answer)
     sources = mask_documents(docs[:3], enabled=mask_sensitive)
 
     return {
@@ -156,4 +155,5 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
         "masked": mask_sensitive,
         "document_count": doc_count,
         "intent": intent.value,
+        "branch": branch_filter or "all",
     }

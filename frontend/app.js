@@ -12,12 +12,7 @@ const fileInput = document.getElementById("fileInput");
 const uploadZone = document.getElementById("uploadZone");
 const fileList = document.getElementById("fileList");
 const uploadStatus = document.getElementById("uploadStatus");
-
-const PROMPT_MAP = {
-  Doctrine: "Explain the military chain of command",
-  Summary: "Summarize the indexed documents",
-  Standards: "Which MIL-STD references are cited?",
-};
+const branchFilter = document.getElementById("branchFilter");
 
 async function fetchWithRetry(url, options = {}, retries = 5, timeoutMs = 90000) {
   let lastError;
@@ -112,7 +107,8 @@ function createMessage(role, text, sources = []) {
       const card = document.createElement("div");
       card.className = "source-card";
       card.innerHTML = `
-        <strong>${escapeHtml(source.source)}${source.page ? ` · page ${source.page}` : ""}</strong>
+        <strong>${escapeHtml(source.title || source.source)}${source.page ? ` · page ${source.page}` : ""}${source.branch ? ` · ${escapeHtml(source.branch)}` : ""}</strong>
+        ${source.source_url ? `<a class="source-link" href="${escapeHtml(source.source_url)}" target="_blank" rel="noopener">Official reference</a>` : ""}
         <p>${escapeHtml(source.content.slice(0, 260))}</p>
       `;
       list.appendChild(card);
@@ -153,8 +149,12 @@ async function sendQuery(query) {
     const response = await fetchWithRetry("/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, mask_sensitive: maskToggle.checked }),
-    });
+      body: JSON.stringify({
+        query,
+        mask_sensitive: maskToggle.checked,
+        branch: branchFilter.value,
+      }),
+    }, 5, 120000);
     const data = await response.json();
     loadingNode.remove();
 
@@ -285,8 +285,7 @@ chatForm.addEventListener("submit", async (event) => {
 promptChips.addEventListener("click", (event) => {
   const card = event.target.closest(".prompt-card");
   if (!card) return;
-  const tag = card.querySelector(".prompt-tag")?.textContent;
-  queryInput.value = PROMPT_MAP[tag] || card.textContent.trim();
+  queryInput.value = card.dataset.query || card.textContent.trim();
   autoResize(queryInput);
   chatForm.requestSubmit();
 });
@@ -295,7 +294,7 @@ clearChatButton.addEventListener("click", () => {
   messagesEl.innerHTML = "";
   createMessage(
     "bot",
-    "Fresh start. Upload military doctrine or technical manuals, then ask about chain of command, summaries, or MIL-STD standards."
+    "Fresh start. Ask about joining, MEPS, ASVAB, benefits, ranks, or pick a branch filter and quick prompt."
   );
 });
 

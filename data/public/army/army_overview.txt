@@ -1,0 +1,35 @@
+---
+branch: army
+topic: overview
+doc_type: guide
+source_url: https://www.goarmy.com/
+title: U.S. Army Overview for New Recruits
+---
+
+# U.S. Army — Overview for Prospective Recruits
+
+The Army is the largest branch of the U.S. Armed Forces, focused on land operations, logistics, engineering, intelligence, cyber, aviation, and medical support worldwide.
+
+## Basic training
+
+Army Basic Combat Training (BCT) lasts approximately 10 weeks at locations such as Fort Moore (Georgia), Fort Sill (Oklahoma), or Fort Leonard Wood (Missouri), depending on job path. Training covers weapons qualification, physical fitness, drill and ceremony, Army values, and field exercises.
+
+## Advanced Individual Training (AIT)
+
+After BCT, most enlisted soldiers attend AIT to learn their Military Occupational Specialty (MOS). AIT length ranges from a few weeks to over a year for highly technical roles.
+
+## Career fields
+
+The Army offers hundreds of MOS options including infantry, armor, aviation, cyber, signal, medical, logistics, military police, and special operations pipelines with additional screening.
+
+## Enlistment options
+
+The Army offers active duty, Army Reserve, and Army National Guard paths. Guard and Reserve members typically serve part-time with monthly drills and annual training while maintaining civilian careers.
+
+## Physical fitness
+
+The Army uses the Army Combat Fitness Test (ACFT) to assess muscular strength, endurance, and aerobic capacity. Recruits should begin conditioning before shipping to BCT.
+
+## Next steps
+
+Contact an Army recruiter, take the ASVAB, and complete MEPS processing. Ask about bonus programs, college repayment, and Guaranteed Training Seats for specific MOS paths when available.

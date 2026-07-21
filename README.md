@@ -1,155 +1,88 @@
-# MilitaryDocs RAG Chatbot
+# Military Recruit Guide RAG
 
-*Free, local document Q&A using LangChain, FastAPI, Hugging Face, and ChromaDB*
+*Free, local military onboarding assistant using LangChain, FastAPI, Hugging Face, and ChromaDB*
 
 ---
 
 ## Project overview
 
-This project builds a document-based chatbot that retrieves answers from military PDF and text documents using:
+Help people joining (or researching) the military find answers fast from **curated public guides** and uploaded documents:
 
-- Retrieval-Augmented Generation (RAG)
-- Hugging Face embeddings and LLM (no OpenAI or Pinecone required)
-- ChromaDB for local vector search
-- FastAPI backend with a built-in chat frontend
-- Optional privacy masking for sensitive patterns in responses
-
----
-
-## Project structure
-
-```
-miltarydocs_rag/
-├── backend/
-│   ├── api/
-│   ├── services/
-│   │   └── embedding_service.py
-│   ├── utils/
-│   │   ├── chunker.py
-│   │   ├── masking.py
-│   │   └── pdf_parser.py
-│   ├── vector_store/
-│   │   └── chroma_client.py
-│   └── main.py
-├── frontend/
-│   ├── index.html
-│   ├── styles.css
-│   └── app.js
-├── scripts/
-│   ├── create_index.py
-│   └── ingest_documents.py
-├── data/
-│   └── sample_chain_of_command.txt
-├── requirements.txt
-└── README.md
-```
+- Joining steps, MEPS, ASVAB, benefits, ranks, and branch overviews
+- Hybrid search (BM25 + vectors + reranker) for acronym-heavy queries
+- Branch filter in the UI
+- Fully local — no paid API keys required
 
 ---
 
-## Installation and setup
-
-1. Clone the repository:
+## Quick start
 
 ```bash
-git clone <your-repo-url>
-cd miltarydocs_rag
-```
-
-2. Install dependencies:
-
-```bash
+git pull origin cursor/free-local-rag-frontend-947a
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+export PYTHONPATH=.
+
+# Load public recruit guides + any files in data/
+python scripts/ingest_documents.py --reset
+
+# Stable server (recommended)
+bash scripts/run_server.sh
+# Open http://127.0.0.1:8000/
 ```
 
-3. Configure environment variables in `.env` (defaults work out of the box):
+---
+
+## Public knowledge base
+
+Pre-built guides live in `data/public/`:
+
+```
+data/public/
+├── general/     joining, MEPS, ASVAB, ranks, benefits
+├── army/
+├── navy/
+├── air-force/
+├── marines/
+├── coast-guard/
+└── space-force/
+```
+
+Add your own PDFs/DOCX/TXT anywhere under `data/` and re-run ingest.
+
+---
+
+## Configuration (`.env`)
 
 ```env
-CHROMA_PERSIST_DIR=chroma_db
-CHROMA_COLLECTION=military-docs
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-LLM_MODEL=google/flan-t5-base
-SEARCH_K=4
-```
-
-4. Add documents to `data/` (PDF or TXT), then ingest:
-
-```bash
-export PYTHONPATH=.
-python scripts/ingest_documents.py --reset
-```
-
-5. Start the server (use the stable script — **not** `run_dev.sh` for normal use):
-
-```bash
-bash scripts/run_server.sh
-```
-
-Wait until the terminal shows `Ready. Indexed chunks: ...` before chatting. First start downloads models and can take 1–2 minutes.
-
-6. Open the chat UI:
-
-```
-http://127.0.0.1:8000/
+USE_HYBRID_SEARCH=true
+USE_RERANKER=true
+USE_LLM=false
+BM25_K=8
+VECTOR_K=8
+FINAL_K=4
 ```
 
 ---
 
 ## API
 
-### `GET /health`
-
-Returns backend status and indexed chunk count.
-
 ### `POST /ask`
-
-```bash
-curl -X POST "http://127.0.0.1:8000/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"What is the military chain of command?","mask_sensitive":true}'
-```
-
-Response:
 
 ```json
 {
-  "answer": "...",
-  "sources": [{"content": "...", "source": "sample_chain_of_command.txt", "page": 1}],
-  "masked": true,
-  "document_count": 3
+  "query": "How do I join the Army?",
+  "branch": "army",
+  "mask_sensitive": true
 }
 ```
 
----
-
-## Privacy masking
-
-The frontend includes a toggle to mask sensitive patterns before display:
-
-- Social Security numbers
-- Email addresses
-- Phone numbers
-- Classification markings such as `SECRET`, `CONFIDENTIAL`, `UNCLASSIFIED//FOUO`
-
-Masking applies to retrieved source snippets only (answers stay readable). Turn it off in the sidebar when working with fully sanitized training data.
+Branch values: `all`, `general`, `army`, `navy`, `air_force`, `marines`, `coast_guard`, `space_force`
 
 ---
 
-## What is configured
+## Disclaimer
 
-- Embeddings: `sentence-transformers/all-MiniLM-L6-v2` (384 dimensions, local CPU)
-- LLM: `google/flan-t5-base` (local, free)
-- Vector store: ChromaDB persisted in `chroma_db/`
-- PDF parsing: native text extraction with pypdf (no native compile on macOS)
-- Frontend: responsive chat UI served from FastAPI
-
----
-
-## Notes
-
-- First run downloads Hugging Face models automatically.
-- PDF text extraction uses `pypdf` and works on macOS/Python 3.13 without compiling native libraries.
-- Scanned image-only PDFs may need to be converted to searchable PDFs first.
-- For stronger answers on capable hardware, set `LLM_MODEL` to a larger local model.
-- No paid API keys are required for the default setup.
+Answers come from indexed public documents only. **Not official DoD guidance.** Verify enlistment, medical, and contract details with a qualified recruiter.
 
 ---

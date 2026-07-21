@@ -62,34 +62,34 @@ def is_header_only_sentence(sentence: str) -> bool:
 
 def build_out_of_scope_answer() -> str:
     return (
-        "This assistant is for military documents only — doctrine, regulations, technical manuals, "
-        "and standards like MIL-STD. Upload those files and ask about their content."
+        "This assistant answers questions from indexed public military guides and uploaded doctrine. "
+        "Ask about joining, MEPS, ASVAB, benefits, ranks, or branch overviews — or upload additional PDFs."
     )
 
 
 def build_vague_answer(intent: Intent | None = None) -> str:
     if intent == Intent.UNKNOWN:
         return (
-            "I didn't catch a military document question. Try asking about chain of command, "
-            "summaries of indexed doctrine, or MIL-STD references — or upload a military PDF/DOCX."
+            "I didn't catch a military question. Try: \"How do I join the Army?\", "
+            "\"What happens at MEPS?\", \"Explain GI Bill benefits\", or pick a quick prompt."
         )
 
     return (
-        "I couldn't find a strong match in your military documents. "
-        "Try rephrasing or upload additional doctrine, regulations, or technical manuals."
+        "I couldn't find a strong match in the indexed guides. "
+        "Try a branch filter, rephrase your question, or upload additional public military documents."
     )
 
 
 def build_greeting_answer(document_count: int) -> str:
     if document_count == 0:
         return (
-            "Hey! I'm your local military document assistant — everything runs on your machine. "
-            "Upload military PDFs, doctrine, or technical manuals using the sidebar, then ask questions."
+            "Welcome! I'm your military onboarding assistant — fully local, no cloud API. "
+            "Run ingest to load public recruit guides, or upload PDFs from the sidebar."
         )
 
     return (
-        f"Hey! I have {document_count} military document passages indexed and ready. "
-        "Ask about chain of command, doctrine summaries, MIL-STD references, or regulations in your files."
+        f"Welcome! I have {document_count} indexed passages covering enlistment, MEPS, ASVAB, "
+        "benefits, ranks, and branch overviews. Pick a branch filter or ask anything about joining."
     )
 
 
@@ -133,11 +133,33 @@ def build_meta_answer(question: str, documents: list, document_count: int) -> st
     file_hint = ", ".join(sources[:4]) if sources else "your uploaded files"
 
     return (
-        f"I search military documents in {file_hint} ({document_count} indexed passages) and answer "
-        "from retrieved content — not general internet knowledge.\n\n"
-        "Ask about doctrine, chain of command, regulations, technical manuals, or MIL-STD references. "
-        "Upload more military files anytime from the sidebar."
+        f"I search indexed military guides and uploaded files ({document_count} passages) and answer "
+        "from retrieved content — not live internet search.\n\n"
+        "Try: joining steps, MEPS, ASVAB, GI Bill, branch comparisons, chain of command, or MIL-STD references."
     )
+
+
+def build_recruiting_answer(question: str, documents: list) -> str:
+    normalized = normalize_question(question)
+    intro = "Here is what the indexed public guides say about your question:\n\n"
+    body = build_extractive_answer(question, documents)
+
+    if "branch" in normalized or "which service" in normalized:
+        branch_lines = []
+        for doc in documents:
+            branch = (doc.metadata or {}).get("branch", "")
+            title = (doc.metadata or {}).get("title", doc.metadata.get("source", ""))
+            if branch and branch != "general" and title:
+                branch_lines.append(f"{branch.replace('_', ' ').title()}: see {title}")
+
+        if branch_lines:
+            unique = list(dict.fromkeys(branch_lines))[:6]
+            body += "\n\nBranch guides available:\n\n" + "\n".join(f"• {line}" for line in unique)
+
+    if body.startswith("I couldn't find"):
+        return body
+
+    return intro + body
 
 
 def build_summary_answer(documents: list) -> str:
@@ -321,6 +343,8 @@ def build_answer_for_intent(intent: Intent, question: str, documents: list, docu
         return build_casual_answer(question, document_count)
     if intent == Intent.HELP:
         return build_meta_answer(question, documents, document_count)
+    if intent == Intent.RECRUITING:
+        return build_recruiting_answer(question, documents)
     if intent == Intent.SUMMARIZE:
         return build_summary_answer(documents)
     if intent == Intent.CHAIN_OF_COMMAND:

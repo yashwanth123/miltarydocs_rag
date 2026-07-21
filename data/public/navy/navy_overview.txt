@@ -1,0 +1,35 @@
+---
+branch: navy
+topic: overview
+doc_type: guide
+source_url: https://www.navy.com/
+title: U.S. Navy Overview for New Recruits
+---
+
+# U.S. Navy — Overview for Prospective Recruits
+
+The Navy projects power from the sea, maintains global presence through aircraft carriers and submarines, and operates aviation, surface warfare, nuclear, and special warfare communities.
+
+## Recruit training
+
+Navy Recruit Training Command (RTC) at Great Lakes, Illinois lasts approximately 8 weeks. Sailors learn Navy core values, seamanship basics, damage control, firearms qualification, and physical readiness.
+
+## Ratings (jobs)
+
+Navy enlisted jobs are called ratings (e.g., IT — Information Systems Technician, HM — Hospital Corpsman, ET — Electronics Technician). Assignment depends on ASVAB line scores and fleet needs at contract time.
+
+## Deployment culture
+
+Sailors may serve aboard ships with periodic deployments lasting several months. Shore duty assignments alternate with sea duty in many career paths. Some ratings are predominantly shore-based.
+
+## Nuclear and special programs
+
+The Nuclear Field (NF) program and Navy SEAL/SWCC pipelines require additional screening, higher ASVAB scores, and extended training commitments.
+
+## Enlistment paths
+
+Active duty and Navy Reserve options exist. The Navy offers education benefits, credentialing programs, and certification mapping for civilian careers.
+
+## Next steps
+
+Meet with a Navy recruiter, verify medical eligibility at MEPS, and review available ratings before signing an enlistment contract.

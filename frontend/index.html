@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MilitaryDocs AI</title>
+  <title>Military Recruit Guide AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -24,8 +24,8 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L4 6v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V6l-8-4z" fill="currentColor"/></svg>
         </div>
         <div>
-          <h1>MilitaryDocs<span>AI</span></h1>
-          <p>Secure local intelligence</p>
+          <h1>Recruit<span>Guide</span></h1>
+          <p>Military onboarding assistant</p>
         </div>
       </div>
 
@@ -39,6 +39,23 @@
           <strong id="chunkCount">—</strong>
         </div>
       </div>
+
+      <section class="panel">
+        <div class="panel-head compact">
+          <h2>Branch focus</h2>
+          <p class="panel-sub">Filter answers by service</p>
+        </div>
+        <select id="branchFilter" class="branch-select">
+          <option value="all">All branches</option>
+          <option value="general">General / joining</option>
+          <option value="army">Army</option>
+          <option value="navy">Navy</option>
+          <option value="air_force">Air Force</option>
+          <option value="marines">Marines</option>
+          <option value="coast_guard">Coast Guard</option>
+          <option value="space_force">Space Force</option>
+        </select>
+      </section>
 
       <section class="panel upload-panel">
         <div class="panel-head compact">
@@ -74,20 +91,34 @@
           <h2>Quick prompts</h2>
         </div>
         <div class="prompt-grid" id="promptChips">
-          <button type="button" class="prompt-card">
-            <span class="prompt-tag">Doctrine</span>
-            Explain the chain of command
+          <button type="button" class="prompt-card" data-query="How do I join the military step by step?">
+            <span class="prompt-tag">Joining</span>
+            How do I join step by step?
           </button>
-          <button type="button" class="prompt-card">
-            <span class="prompt-tag">Summary</span>
-            Summarize indexed documents
+          <button type="button" class="prompt-card" data-query="What happens at MEPS and what should I bring?">
+            <span class="prompt-tag">MEPS</span>
+            What happens at MEPS?
           </button>
-          <button type="button" class="prompt-card">
-            <span class="prompt-tag">Standards</span>
-            Which MIL-STD references are cited?
+          <button type="button" class="prompt-card" data-query="Explain ASVAB scores and how they affect job options">
+            <span class="prompt-tag">ASVAB</span>
+            How does the ASVAB work?
+          </button>
+          <button type="button" class="prompt-card" data-query="Summarize GI Bill and military benefits for new recruits">
+            <span class="prompt-tag">Benefits</span>
+            GI Bill and benefits overview
+          </button>
+          <button type="button" class="prompt-card" data-query="Compare Army Navy Air Force Marines for someone choosing a branch">
+            <span class="prompt-tag">Branches</span>
+            Help me choose a branch
+          </button>
+          <button type="button" class="prompt-card" data-query="Explain military ranks and base pay basics">
+            <span class="prompt-tag">Ranks</span>
+            Ranks and pay basics
           </button>
         </div>
       </section>
+
+      <p class="disclaimer">Public-document assistant only. Not official DoD guidance. Verify with a recruiter.</p>
 
       <button class="btn-ghost" id="clearChat">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
@@ -98,10 +129,10 @@
     <main class="main glass">
       <header class="main-header">
         <div>
-          <p class="eyebrow">Document Intelligence Console</p>
-          <h2>Ask your knowledge base</h2>
+          <p class="eyebrow">Military Onboarding Console</p>
+          <h2>Ask about joining &amp; public military info</h2>
         </div>
-        <div class="pill" id="statusPill">Local RAG · Hugging Face · ChromaDB</div>
+        <div class="pill" id="statusPill">Local RAG · Hybrid search · Public guides</div>
       </header>
 
       <section class="chat" id="messages">
@@ -112,7 +143,7 @@
           <div class="bubble bot-bubble">
             <div class="bubble-label">Assistant</div>
             <div class="bubble-body">
-              <p>Upload military doctrine, regulations, or technical manuals on the left, then ask naturally. I answer from your indexed documents — fully local, no cloud API.</p>
+              <p>Welcome! I answer from indexed public recruit guides — joining, MEPS, ASVAB, benefits, ranks, and branch overviews. Pick a branch filter or try a quick prompt below.</p>
             </div>
           </div>
         </article>
@@ -121,7 +152,7 @@
       <footer class="composer-wrap">
         <form class="composer glass" id="chatForm">
           <div class="composer-inner">
-            <textarea id="queryInput" rows="1" placeholder="Ask something specific about your documents..." required></textarea>
+            <textarea id="queryInput" rows="1" placeholder="e.g. How do I join the Army? What is MEPS?" required></textarea>
             <button type="submit" id="sendButton" aria-label="Send message">
               <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>

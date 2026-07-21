@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from scripts.ingest_documents import DATA_DIR, SUPPORTED_EXTENSIONS, ingest_file
-from backend.vector_store.chroma_client import add_to_index, collection_count
+from backend.services.retrieval_service import refresh_lexical_index
+from backend.vector_store.chroma_client import add_to_index, collection_count, remove_documents_by_source
 
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
@@ -10,8 +11,8 @@ def list_data_files() -> list[str]:
     if not DATA_DIR.exists():
         return []
     return sorted(
-        path.name
-        for path in DATA_DIR.iterdir()
+        str(path.relative_to(DATA_DIR))
+        for path in DATA_DIR.rglob("*")
         if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
     )
 
@@ -32,6 +33,9 @@ def save_upload(filename: str, content: bytes) -> Path:
 
 
 def ingest_saved_file(path: Path) -> dict:
+    relative_source = str(path.relative_to(DATA_DIR))
+    remove_documents_by_source(relative_source)
+
     documents = ingest_file(path)
     if not documents:
         return {
@@ -41,6 +45,7 @@ def ingest_saved_file(path: Path) -> dict:
         }
 
     added = add_to_index(documents)
+    refresh_lexical_index()
     return {
         "filename": path.name,
         "chunks_added": added,
