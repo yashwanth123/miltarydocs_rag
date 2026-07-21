@@ -6,16 +6,25 @@ cd "$ROOT_DIR"
 
 echo "==> Project: $ROOT_DIR"
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "ERROR: python3 is not installed."
+PYTHON_BIN="python3"
+if command -v python3.12 >/dev/null 2>&1; then
+  PYTHON_BIN="python3.12"
+  echo "==> Using Python 3.12 (recommended on macOS)"
+else
+  echo "==> Using default python3"
+  echo "    Tip: if install fails on Python 3.13, run: brew install python@3.12"
+fi
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  echo "ERROR: $PYTHON_BIN is not installed."
   exit 1
 fi
 
-echo "==> Python: $(python3 --version)"
+echo "==> Python: $($PYTHON_BIN --version)"
 
 if [ ! -d ".venv" ]; then
   echo "==> Creating virtual environment..."
-  python3 -m venv .venv
+  "$PYTHON_BIN" -m venv .venv
 fi
 
 echo "==> Activating virtual environment..."
@@ -34,7 +43,8 @@ import dotenv
 import chromadb
 import fastapi
 import pypdf
-print("Dependencies OK")
+import pydantic
+print(f"Dependencies OK (pydantic {pydantic.__version__})")
 PY
 
 mkdir -p data
