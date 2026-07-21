@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from langchain_core.documents import Document
 
 from backend.utils.chunker import chunk_text
+from backend.utils.docx_parser import extract_text_from_docx
 from backend.utils.pdf_parser import extract_text_from_pdf
 from backend.vector_store.chroma_client import add_to_index, collection_count, reset_collection
 from scripts.reference_detector import detect_references
@@ -11,7 +12,7 @@ from scripts.reference_detector import detect_references
 load_dotenv()
 
 DATA_DIR = Path("data")
-SUPPORTED_EXTENSIONS = {".pdf", ".txt"}
+SUPPORTED_EXTENSIONS = {".pdf", ".txt", ".docx"}
 
 
 def load_text_file(file_path: Path) -> list[tuple[int, str]]:
@@ -27,6 +28,8 @@ def ingest_file(file_path: Path) -> list[Document]:
         pages = extract_text_from_pdf(str(file_path))
     elif suffix == ".txt":
         pages = load_text_file(file_path)
+    elif suffix == ".docx":
+        pages = extract_text_from_docx(str(file_path))
 
     documents: list[Document] = []
     for page_num, page_text in pages:
@@ -61,7 +64,7 @@ def main(reset: bool = False) -> None:
     )
 
     if not files:
-        print(f"No supported files found in {DATA_DIR}. Add PDF or TXT files first.")
+        print(f"No supported files found in {DATA_DIR}. Add PDF, TXT, or DOCX files first.")
         return
 
     for file_path in files:
