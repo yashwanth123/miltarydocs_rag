@@ -1,17 +1,15 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
 from backend.services.embedding_service import ask_question
 
 router = APIRouter()
 
 class QueryRequest(BaseModel):
-    question: str
+    query: str = Field(..., min_length=1, max_length=2000)
+    mask_sensitive: bool = True
 
-@router.get("/")
-def root():
-    return {"message": "Backend running"}
 
 @router.post("/ask")
 def ask(request: QueryRequest):
-    answer = ask_question(request.question)
-    return {"answer": answer}
+    return ask_question(request.query, mask_sensitive=request.mask_sensitive)
