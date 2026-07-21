@@ -81,7 +81,7 @@ python scripts/ingest_documents.py --reset
 5. Start the server:
 
 ```bash
-uvicorn backend.main:app --reload
+bash scripts/run_dev.sh
 ```
 
 6. Open the chat UI:

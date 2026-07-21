@@ -209,7 +209,7 @@ async function refreshHealth() {
     statusLabel.textContent = "Offline";
     chunkCount.textContent = "—";
     statusPill.classList.remove("online");
-    statusPill.textContent = "Start server: uvicorn backend.main:app --reload";
+    statusPill.textContent = "Start server: bash scripts/run_dev.sh";
   }
 }
 
