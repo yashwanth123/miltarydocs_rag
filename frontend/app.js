@@ -8,6 +8,10 @@ const statusLabel = document.getElementById("statusLabel");
 const chunkCount = document.getElementById("chunkCount");
 const statusPill = document.getElementById("statusPill");
 const promptChips = document.getElementById("promptChips");
+const fileInput = document.getElementById("fileInput");
+const uploadZone = document.getElementById("uploadZone");
+const fileList = document.getElementById("fileList");
+const uploadStatus = document.getElementById("uploadStatus");
 
 const PROMPT_MAP = {
   Doctrine: "Explain the military chain of command",
@@ -20,9 +24,16 @@ function autoResize(textarea) {
   textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
 }
 
+function escapeHtml(value) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function renderAnswer(text) {
   const blocks = text.split("\n\n");
-  const html = blocks
+  return blocks
     .map((block) => {
       const trimmed = block.trim();
       if (trimmed.startsWith("•")) {
@@ -35,14 +46,6 @@ function renderAnswer(text) {
       return `<p>${escapeHtml(trimmed).replace(/\n/g, "<br>")}</p>`;
     })
     .join("");
-  return html;
-}
-
-function escapeHtml(value) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
 
 function createMessage(role, text, sources = []) {
@@ -51,9 +54,8 @@ function createMessage(role, text, sources = []) {
 
   const avatar = document.createElement("div");
   avatar.className = `avatar ${role === "user" ? "user-avatar" : "bot-avatar"}`;
-  if (role === "user") {
-    avatar.textContent = "YOU";
-  } else {
+  avatar.textContent = role === "user" ? "YOU" : "";
+  if (role === "bot") {
     avatar.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3c-4 0-7 2.5-7 6v2c0 3.5 3 6 7 6s7-2.5 7-6V9c0-3.5-3-6-7-6z" fill="currentColor"/></svg>';
   }
 
@@ -66,12 +68,7 @@ function createMessage(role, text, sources = []) {
 
   const body = document.createElement("div");
   body.className = "bubble-body";
-
-  if (role === "user") {
-    body.textContent = text;
-  } else {
-    body.innerHTML = renderAnswer(text);
-  }
+  body.innerHTML = role === "user" ? `<p>${escapeHtml(text)}</p>` : renderAnswer(text);
 
   bubble.appendChild(label);
   bubble.appendChild(body);
@@ -119,28 +116,22 @@ function createMessage(role, text, sources = []) {
 
 function createTypingMessage() {
   const message = createMessage("bot", "");
-  const body = message.querySelector(".bubble-body");
-  body.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
-  message.dataset.loading = "true";
+  message.querySelector(".bubble-body").innerHTML =
+    '<div class="typing"><span></span><span></span><span></span></div>';
   return message;
 }
 
 async function sendQuery(query) {
   createMessage("user", query);
   sendButton.disabled = true;
-
   const loadingNode = createTypingMessage();
 
   try {
     const response = await fetch("/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query,
-        mask_sensitive: maskToggle.checked,
-      }),
+      body: JSON.stringify({ query, mask_sensitive: maskToggle.checked }),
     });
-
     const data = await response.json();
     loadingNode.remove();
 
@@ -160,6 +151,51 @@ async function sendQuery(query) {
   }
 }
 
+function renderFileList(files) {
+  fileList.innerHTML = "";
+  if (!files || files.length === 0) {
+    fileList.innerHTML = "<li>No files uploaded yet</li>";
+    return;
+  }
+  files.forEach((name) => {
+    const item = document.createElement("li");
+    item.textContent = name;
+    fileList.appendChild(item);
+  });
+}
+
+async function uploadFiles(fileListInput) {
+  if (!fileListInput || fileListInput.length === 0) return;
+
+  const formData = new FormData();
+  Array.from(fileListInput).forEach((file) => formData.append("files", file));
+
+  uploadStatus.classList.remove("error");
+  uploadStatus.textContent = "Uploading and indexing...";
+
+  try {
+    const response = await fetch("/upload", { method: "POST", body: formData });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Upload failed");
+    }
+
+    uploadStatus.textContent = data.message || "Upload complete.";
+    renderFileList(data.files);
+    await refreshHealth();
+    createMessage(
+      "bot",
+      `Upload complete — ${data.indexed_chunks} passages are now indexed. Ask me anything about your documents.`
+    );
+  } catch (error) {
+    uploadStatus.classList.add("error");
+    uploadStatus.textContent = error.message;
+  } finally {
+    fileInput.value = "";
+  }
+}
+
 async function refreshHealth() {
   try {
     const response = await fetch("/health");
@@ -168,6 +204,7 @@ async function refreshHealth() {
     chunkCount.textContent = `${data.indexed_chunks} chunks`;
     statusPill.classList.add("online");
     statusPill.textContent = "Backend connected · Local RAG active";
+    renderFileList(data.files);
   } catch (_error) {
     statusLabel.textContent = "Offline";
     chunkCount.textContent = "—";
@@ -198,8 +235,27 @@ clearChatButton.addEventListener("click", () => {
   messagesEl.innerHTML = "";
   createMessage(
     "bot",
-    "Conversation reset.\n\nAsk a specific question about doctrine, summaries, skills, or standards in your indexed files."
+    "Fresh start. Upload a document or ask me anything about chain of command, summaries, skills, or military standards."
   );
+});
+
+fileInput.addEventListener("change", (event) => {
+  uploadFiles(event.target.files);
+});
+
+uploadZone.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  uploadZone.classList.add("dragover");
+});
+
+uploadZone.addEventListener("dragleave", () => {
+  uploadZone.classList.remove("dragover");
+});
+
+uploadZone.addEventListener("drop", (event) => {
+  event.preventDefault();
+  uploadZone.classList.remove("dragover");
+  uploadFiles(event.dataTransfer.files);
 });
 
 queryInput.addEventListener("input", () => autoResize(queryInput));

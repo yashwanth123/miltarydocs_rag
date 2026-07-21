@@ -11,6 +11,7 @@ from backend.services.answer_builder import (
 )
 from backend.services.query_intent import (
     Intent,
+    NO_RETRIEVAL_INTENTS,
     classify_intent,
     expand_retrieval_queries,
     is_vague_question,
@@ -45,8 +46,8 @@ def _maybe_enhance_with_llm(question: str, context: str, draft_answer: str) -> s
         return draft_answer
 
     prompt = (
-        "Rewrite the draft answer so it is clear, helpful, and grounded in the context. "
-        "Do not invent facts.\n\n"
+        "Rewrite the draft answer in a natural, conversational tone. "
+        "Keep all facts from the draft. Do not invent information.\n\n"
         f"Context:\n{context}\n\n"
         f"Question: {question}\n"
         f"Draft answer: {draft_answer}\n"
@@ -82,12 +83,14 @@ def _retrieve_documents(question: str, intent: Intent) -> list:
 
 def ask_question(question: str, mask_sensitive: bool = True) -> dict:
     cleaned_question = question.strip()
+    doc_count = collection_count()
 
-    if collection_count() == 0:
+    if doc_count == 0:
         return {
             "answer": (
-                "No documents are indexed yet. Add PDF, DOCX, or TXT files to the data/ folder "
-                "and run `python scripts/ingest_documents.py --reset`."
+                "Hey — I don't have any documents indexed yet. "
+                "Use the Upload panel on the left to add a PDF, DOCX, or TXT file, "
+                "then ask me questions about it."
             ),
             "sources": [],
             "masked": mask_sensitive,
@@ -97,38 +100,47 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
 
     intent = classify_intent(cleaned_question)
 
+    if intent in NO_RETRIEVAL_INTENTS:
+        return {
+            "answer": build_answer_for_intent(intent, cleaned_question, [], doc_count),
+            "sources": [],
+            "masked": mask_sensitive,
+            "document_count": doc_count,
+            "intent": intent.value,
+        }
+
     if is_vague_question(cleaned_question, intent):
         return {
             "answer": build_vague_answer(Intent.UNKNOWN),
             "sources": [],
             "masked": mask_sensitive,
-            "document_count": collection_count(),
+            "document_count": doc_count,
             "intent": Intent.UNKNOWN.value,
         }
 
     docs = _retrieve_documents(cleaned_question, intent)
 
-    if not docs and intent not in {Intent.GREETING, Intent.HELP}:
+    if not docs:
         return {
             "answer": build_vague_answer(),
             "sources": [],
             "masked": mask_sensitive,
-            "document_count": collection_count(),
+            "document_count": doc_count,
             "intent": intent.value,
         }
 
-    answer = build_answer_for_intent(intent, cleaned_question, docs, collection_count())
+    answer = build_answer_for_intent(intent, cleaned_question, docs, doc_count)
 
     if intent == Intent.GENERAL and docs:
         context = "\n\n".join(doc.page_content for doc in docs[:3])
         answer = _maybe_enhance_with_llm(cleaned_question, context, answer)
 
-    sources = mask_documents(docs[:3], enabled=mask_sensitive) if docs else []
+    sources = mask_documents(docs[:3], enabled=mask_sensitive)
 
     return {
         "answer": answer,
         "sources": sources,
         "masked": mask_sensitive,
-        "document_count": collection_count(),
+        "document_count": doc_count,
         "intent": intent.value,
     }

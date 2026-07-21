@@ -4,6 +4,7 @@ from enum import Enum
 
 class Intent(str, Enum):
     GREETING = "greeting"
+    CHAT = "chat"
     HELP = "help"
     SUMMARIZE = "summarize"
     IDENTITY = "identity"
@@ -149,6 +150,14 @@ TOKEN_SYNONYMS = {
     "military": {"army", "defense", "doctrine", "service"},
 }
 
+CASUAL_EXACT = {
+    "ok", "okay", "k", "cool", "nice", "yep", "yeah", "ya", "yup",
+    "sup", "thanks", "thank you", "ty", "hype", "lol", "haha", "heee",
+    "hii", "hiii", "sure", "alright", "bet", "word",
+}
+
+NO_RETRIEVAL_INTENTS = {Intent.GREETING, Intent.CHAT, Intent.HELP}
+
 
 def normalize_question(question: str) -> str:
     q = question.strip().lower()
@@ -166,6 +175,9 @@ def classify_intent(question: str) -> Intent:
 
     if not normalized:
         return Intent.UNKNOWN
+
+    if is_casual_chat(normalized):
+        return Intent.CHAT
 
     if len(normalized.split()) <= 1 and normalized in {"where", "who", "why", "how", "what"}:
         return Intent.UNKNOWN
@@ -190,11 +202,27 @@ def classify_intent(question: str) -> Intent:
     return best_intent
 
 
+def is_casual_chat(normalized: str) -> bool:
+    if normalized in {"hi", "hello", "hey", "howdy", "greetings"}:
+        return False
+    if normalized in CASUAL_EXACT:
+        return True
+    if re.match(r"^(ha+|he+|lol+|wow+|yes+|no+|hii+)$", normalized):
+        return True
+    if len(normalized) <= 5 and normalized.isalpha() and normalized not in {
+        "where", "who", "what", "when", "why", "how",
+    }:
+        return True
+    return False
+
+
 def is_vague_question(question: str, intent: Intent) -> bool:
     if intent not in {Intent.UNKNOWN, Intent.GENERAL}:
         return False
 
     normalized = normalize_question(question)
+    if is_casual_chat(normalized):
+        return False
     words = normalized.split()
 
     if len(words) <= 1:

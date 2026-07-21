@@ -191,6 +191,81 @@ body {
 
 .panel-head.compact { display: block; }
 
+.panel-sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.upload-zone {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 18px 14px;
+  border-radius: 16px;
+  border: 1px dashed rgba(71, 211, 255, 0.35);
+  background: linear-gradient(145deg, rgba(71,211,255,0.08), rgba(139,92,246,0.06));
+  cursor: pointer;
+  text-align: center;
+  transition: 0.2s;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: rgba(71, 211, 255, 0.65);
+  background: linear-gradient(145deg, rgba(71,211,255,0.14), rgba(139,92,246,0.1));
+  transform: translateY(-1px);
+}
+
+.upload-zone strong {
+  font-size: 0.88rem;
+}
+
+.upload-zone span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.upload-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  color: var(--cyan);
+  background: rgba(71, 211, 255, 0.12);
+  border: 1px solid rgba(71, 211, 255, 0.2);
+}
+
+.file-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.file-list li {
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  word-break: break-all;
+}
+
+.upload-status {
+  min-height: 1.2em;
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: var(--cyan);
+}
+
+.upload-status.error { color: var(--danger); }
+
 .panel-head h2 {
   margin: 0;
   font-size: 0.95rem;

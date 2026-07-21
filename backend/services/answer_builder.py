@@ -63,32 +63,57 @@ def is_header_only_sentence(sentence: str) -> bool:
 def build_vague_answer(intent: Intent | None = None) -> str:
     if intent == Intent.UNKNOWN:
         return (
-            "I need a bit more detail to search your documents effectively.\n\n"
-            "Try asking in any of these ways:\n"
-            "• Explain the chain of command\n"
-            "• Give me a summary of the documents\n"
-            "• What skills or experience are listed?\n"
-            "• Which MIL-STD references are mentioned?"
+            "I didn't quite catch a document question there. "
+            "Try something like \"summarize my documents\" or \"explain the chain of command\" — "
+            "or upload a PDF/DOCX using the Upload panel on the left."
         )
 
     return (
-        "I couldn't find a strong match in the indexed content.\n\n"
-        "Rephrase your question or try:\n"
-        "• What is the military chain of command?\n"
-        "• Summarize the indexed documents\n"
-        "• What experience appears in the resume?\n"
-        "• List the military standards referenced"
+        "I searched your indexed files but couldn't find a strong match for that question. "
+        "Try rephrasing it, upload more documents, or ask about chain of command, summaries, skills, or MIL-STD references."
     )
 
 
 def build_greeting_answer(document_count: int) -> str:
+    if document_count == 0:
+        return (
+            "Hey! I'm your local document assistant — everything runs on your machine, no cloud API needed. "
+            "Upload a PDF, DOCX, or TXT file using the sidebar, then ask me anything about its content."
+        )
+
     return (
-        f"Hello. I am ready to answer questions from your indexed documents ({document_count} chunks).\n\n"
-        "You can ask naturally — for example:\n"
-        "• Explain the chain of command\n"
-        "• Brief me on the documents\n"
-        "• What skills are mentioned?\n"
-        "• What can you help me with?"
+        f"Hey! Good to see you. I've got {document_count} passages indexed and ready to search. "
+        "Ask me naturally — summarize your files, explain chain of command, pull skills from a resume, "
+        "or upload new documents anytime from the sidebar."
+    )
+
+
+def build_casual_answer(question: str, document_count: int) -> str:
+    normalized = normalize_question(question)
+
+    responses = {
+        "ok": "Got it. Ask me a document question whenever you're ready — or drop a new file in the upload panel.",
+        "okay": "Sounds good. I'm here when you want to search your documents.",
+        "cool": "Glad that works. What would you like to explore in your documents?",
+        "nice": "Thanks. Want a summary, a specific fact, or help understanding chain of command?",
+        "thanks": "You're welcome. Happy to help with your documents anytime.",
+        "thank you": "You're welcome. Just ask when you need something from your files.",
+        "ty": "Anytime. Fire away with a document question when you're ready.",
+        "hype": "I like the energy. Upload a resume or military doc and I'll answer questions from it right away.",
+        "heee": "Hey there. I'm ready when you are — try asking about your documents or upload a new file.",
+        "lol": "Ha — I'm better with document questions than jokes. Try \"summarize my files\" or \"explain chain of command.\"",
+        "haha": "Glad you're amused. When you're ready, I can search and summarize your uploaded documents.",
+        "yep": "Great. What should I look up in your documents?",
+        "yeah": "Alright. What would you like to know from your indexed files?",
+        "sup": f"Not much — just guarding {document_count} indexed passages. What do you want to know?",
+    }
+
+    if normalized in responses:
+        return responses[normalized]
+
+    return (
+        "I'm here to help with your documents. Upload a file on the left, or ask something specific "
+        "like \"summarize the documents\" or \"what is the chain of command.\""
     )
 
 
@@ -103,13 +128,10 @@ def build_meta_answer(question: str, documents: list, document_count: int) -> st
     file_hint = ", ".join(sources[:4]) if sources else "your uploaded files"
 
     return (
-        f"I search {document_count} chunks from {file_hint} and answer from retrieved passages.\n\n"
-        "You can ask in many ways, such as:\n"
-        "• Explain / describe / define …\n"
-        "• Summarize / give overview / main points\n"
-        "• Who am I / what is my experience\n"
-        "• Chain of command / hierarchy / who reports to whom\n"
-        "• MIL-STD / military standards referenced"
+        f"I read from {file_hint} ({document_count} indexed passages) and answer using retrieved content — "
+        "not from general internet knowledge.\n\n"
+        "You can ask naturally: explain a topic, summarize files, list standards, "
+        "or ask about skills and experience in a resume. Upload more files anytime from the sidebar."
     )
 
 
@@ -143,9 +165,8 @@ def build_summary_answer(documents: list) -> str:
     if not chosen:
         return build_vague_answer()
 
-    return "Here is a concise summary based on your indexed documents:\n\n" + "\n\n".join(
-        f"• {sentence}" for sentence in chosen
-    )
+    intro = "Here is a concise summary based on your indexed documents:\n\n"
+    return intro + "\n\n".join(f"• {sentence}" for sentence in chosen)
 
 
 def build_identity_answer(documents: list) -> str:
@@ -195,8 +216,12 @@ def build_chain_of_command_answer(documents: list) -> str:
                     bullets.append(line)
 
     if bullets:
-        intro = "Here is the chain-of-command information found in your documents:\n\n"
-        return intro + "\n\n".join(f"• {item.lstrip('•').strip()}" for item in bullets[:8])
+        body = "\n\n".join(f"• {item.lstrip('•').strip()}" for item in bullets[:8])
+        return (
+            "Based on your documents, the chain of command is the line of authority "
+            "through which orders are transmitted. Here is the structure and key principles I found:\n\n"
+            + body
+        )
 
     return build_extractive_answer("military chain of command authority responsibility", documents)
 
@@ -319,6 +344,8 @@ def build_extractive_answer(question: str, documents: list) -> str:
 def build_answer_for_intent(intent: Intent, question: str, documents: list, document_count: int) -> str:
     if intent == Intent.GREETING:
         return build_greeting_answer(document_count)
+    if intent == Intent.CHAT:
+        return build_casual_answer(question, document_count)
     if intent == Intent.HELP:
         return build_meta_answer(question, documents, document_count)
     if intent == Intent.SUMMARIZE:
