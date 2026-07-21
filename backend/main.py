@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -9,11 +10,24 @@ from pydantic import BaseModel, Field
 
 from backend.services.embedding_service import ask_question
 from backend.services.upload_service import ingest_saved_file, list_data_files, save_upload
-from backend.vector_store.chroma_client import collection_count
+from backend.vector_store.chroma_client import (
+    collection_count,
+    embeddings_ready,
+    get_embeddings,
+)
 
 load_dotenv()
 
-app = FastAPI(title="MilitaryDocs RAG", version="2.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    print("Loading embedding model (first start may take a moment)...")
+    get_embeddings()
+    print(f"Ready. Indexed chunks: {collection_count()}")
+    yield
+
+
+app = FastAPI(title="MilitaryDocs RAG", version="2.2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,10 +53,12 @@ def root():
 
 @app.get("/health")
 def health():
+    ready = embeddings_ready()
     return {
-        "status": "ok",
-        "indexed_chunks": collection_count(),
-        "files": list_data_files(),
+        "status": "ok" if ready else "starting",
+        "ready": ready,
+        "indexed_chunks": collection_count() if ready else 0,
+        "files": list_data_files() if ready else [],
     }
 
 

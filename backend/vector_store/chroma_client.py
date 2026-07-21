@@ -3,10 +3,15 @@ import shutil
 from pathlib import Path
 
 from dotenv import load_dotenv
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
 
 load_dotenv()
+
+# Reduce background writes/noise from Chroma telemetry
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+os.environ.setdefault("CHROMA_TELEMETRY", "False")
+
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
 
 CHROMA_DIR = os.getenv("CHROMA_PERSIST_DIR", "chroma_db")
 COLLECTION_NAME = os.getenv("CHROMA_COLLECTION", "military-docs")
@@ -16,16 +21,22 @@ EMBEDDING_MODEL = os.getenv(
 
 _embeddings: HuggingFaceEmbeddings | None = None
 _vector_store: Chroma | None = None
+_embeddings_ready = False
+
+
+def embeddings_ready() -> bool:
+    return _embeddings_ready
 
 
 def get_embeddings() -> HuggingFaceEmbeddings:
-    global _embeddings
+    global _embeddings, _embeddings_ready
     if _embeddings is None:
         _embeddings = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
             model_kwargs={"device": "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )
+        _embeddings_ready = True
     return _embeddings
 
 

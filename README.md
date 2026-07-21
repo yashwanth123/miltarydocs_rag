@@ -78,11 +78,13 @@ export PYTHONPATH=.
 python scripts/ingest_documents.py --reset
 ```
 
-5. Start the server:
+5. Start the server (use the stable script — **not** `run_dev.sh` for normal use):
 
 ```bash
-bash scripts/run_dev.sh
+bash scripts/run_server.sh
 ```
+
+Wait until the terminal shows `Ready. Indexed chunks: ...` before chatting. First start downloads models and can take 1–2 minutes.
 
 6. Open the chat UI:
 
@@ -128,7 +130,7 @@ The frontend includes a toggle to mask sensitive patterns before display:
 - Phone numbers
 - Classification markings such as `SECRET`, `CONFIDENTIAL`, `UNCLASSIFIED//FOUO`
 
-Masking applies to both the generated answer and retrieved source snippets. Turn it off in the sidebar when working with fully sanitized training data.
+Masking applies to retrieved source snippets only (answers stay readable). Turn it off in the sidebar when working with fully sanitized training data.
 
 ---
 

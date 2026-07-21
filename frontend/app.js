@@ -19,6 +19,29 @@ const PROMPT_MAP = {
   Standards: "Which MIL-STD references are cited?",
 };
 
+async function fetchWithRetry(url, options = {}, retries = 5, timeoutMs = 90000) {
+  let lastError;
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      return response;
+    } catch (error) {
+      clearTimeout(timer);
+      lastError = error;
+      if (attempt < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 function autoResize(textarea) {
   textarea.style.height = "auto";
   textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
@@ -127,7 +150,7 @@ async function sendQuery(query) {
   const loadingNode = createTypingMessage();
 
   try {
-    const response = await fetch("/ask", {
+    const response = await fetchWithRetry("/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, mask_sensitive: maskToggle.checked }),
@@ -144,7 +167,11 @@ async function sendQuery(query) {
     refreshHealth();
   } catch (error) {
     loadingNode.remove();
-    createMessage("bot", `Network error: ${error.message}`);
+    const hint =
+      error.name === "AbortError"
+        ? "Request timed out — the server may still be loading models. Wait for Status: Online, then try again."
+        : "Connection failed — stop any old server (Ctrl+C), then run: bash scripts/run_server.sh";
+    createMessage("bot", hint);
   } finally {
     sendButton.disabled = false;
     queryInput.focus();
@@ -174,7 +201,7 @@ async function uploadFiles(fileListInput) {
   uploadStatus.textContent = "Uploading and indexing...";
 
   try {
-    const response = await fetch("/upload", { method: "POST", body: formData });
+    const response = await fetchWithRetry("/upload", { method: "POST", body: formData });
     const data = await response.json();
 
     if (!response.ok) {
@@ -196,20 +223,53 @@ async function uploadFiles(fileListInput) {
   }
 }
 
-async function refreshHealth() {
-  try {
-    const response = await fetch("/health");
-    const data = await response.json();
+function setBackendStatus(state, data = {}) {
+  if (state === "online") {
     statusLabel.textContent = "Online";
     chunkCount.textContent = `${data.indexed_chunks} chunks`;
     statusPill.classList.add("online");
     statusPill.textContent = "Backend connected · Local RAG active";
     renderFileList(data.files);
-  } catch (_error) {
-    statusLabel.textContent = "Offline";
+    return;
+  }
+
+  if (state === "starting") {
+    statusLabel.textContent = "Starting";
     chunkCount.textContent = "—";
     statusPill.classList.remove("online");
-    statusPill.textContent = "Start server: bash scripts/run_dev.sh";
+    statusPill.textContent = "Loading models — first start can take 1–2 min";
+    return;
+  }
+
+  statusLabel.textContent = "Offline";
+  chunkCount.textContent = "—";
+  statusPill.classList.remove("online");
+  statusPill.textContent = "Run: bash scripts/run_server.sh (not run_dev.sh)";
+}
+
+async function refreshHealth() {
+  try {
+    const response = await fetchWithRetry("/health", {}, 3, 15000);
+    const data = await response.json();
+
+    if (data.ready) {
+      setBackendStatus("online", data);
+      return true;
+    }
+
+    setBackendStatus("starting");
+    return false;
+  } catch (_error) {
+    setBackendStatus("offline");
+    return false;
+  }
+}
+
+async function waitForBackend(maxAttempts = 40) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const ready = await refreshHealth();
+    if (ready) return;
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 }
 
@@ -267,4 +327,4 @@ queryInput.addEventListener("keydown", (event) => {
   }
 });
 
-refreshHealth();
+waitForBackend();

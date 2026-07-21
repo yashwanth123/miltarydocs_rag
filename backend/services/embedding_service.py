@@ -1,8 +1,6 @@
 import os
 
 from dotenv import load_dotenv
-from langchain_community.llms import HuggingFacePipeline
-from transformers import pipeline
 
 from backend.services.answer_builder import (
     build_answer_for_intent,
@@ -24,7 +22,8 @@ from backend.vector_store.chroma_client import collection_count, get_retriever
 load_dotenv()
 
 LLM_MODEL = os.getenv("LLM_MODEL", "google/flan-t5-large")
-SEARCH_K = int(os.getenv("SEARCH_K", "8"))
+SEARCH_K = int(os.getenv("SEARCH_K", "4"))
+MAX_RETRIEVAL_QUERIES = int(os.getenv("MAX_RETRIEVAL_QUERIES", "2"))
 USE_LLM = os.getenv("USE_LLM", "false").lower() == "true"
 
 _llm = None
@@ -33,6 +32,9 @@ _llm = None
 def _get_llm():
     global _llm
     if _llm is None:
+        from langchain_community.llms import HuggingFacePipeline
+        from transformers import pipeline
+
         generator = pipeline(
             "text2text-generation",
             model=LLM_MODEL,
@@ -67,13 +69,13 @@ def _maybe_enhance_with_llm(question: str, context: str, draft_answer: str) -> s
 
 def _retrieve_documents(question: str, intent: Intent) -> list:
     retriever = get_retriever(search_k=SEARCH_K)
-    queries = expand_retrieval_queries(question, intent)
+    queries = expand_retrieval_queries(question, intent)[:MAX_RETRIEVAL_QUERIES]
 
     merged = []
     seen_chunks: set[str] = set()
 
     for query in queries:
-        for doc in retriever.get_relevant_documents(query):
+        for doc in retriever.invoke(query):
             key = doc.page_content[:120]
             if key in seen_chunks:
                 continue
