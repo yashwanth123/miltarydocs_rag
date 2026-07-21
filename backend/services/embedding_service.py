@@ -6,8 +6,14 @@ from transformers import pipeline
 
 from backend.services.answer_builder import (
     build_extractive_answer,
+    build_identity_answer,
     build_meta_answer,
+    build_summary_answer,
+    build_vague_answer,
+    is_identity_question,
     is_meta_question,
+    is_summarize_intent,
+    is_vague_question,
     is_weak_model_answer,
 )
 from backend.utils.masking import filter_documents, mask_documents
@@ -58,6 +64,8 @@ def _maybe_enhance_with_llm(question: str, context: str, draft_answer: str) -> s
 
 
 def ask_question(question: str, mask_sensitive: bool = True) -> dict:
+    cleaned_question = question.strip()
+
     if collection_count() == 0:
         return {
             "answer": (
@@ -69,38 +77,32 @@ def ask_question(question: str, mask_sensitive: bool = True) -> dict:
             "document_count": 0,
         }
 
-    retriever = get_retriever(search_k=SEARCH_K)
-    raw_docs = retriever.get_relevant_documents(question)
-
-    if is_meta_question(question):
-        docs = filter_documents(raw_docs) or raw_docs
-        answer = build_meta_answer(question, docs, collection_count())
-        sources = mask_documents(docs[:3], enabled=mask_sensitive)
+    if is_vague_question(cleaned_question):
         return {
-            "answer": answer,
-            "sources": sources,
-            "masked": mask_sensitive,
-            "document_count": collection_count(),
-        }
-
-    docs = filter_documents(raw_docs)
-
-    if not docs:
-        return {
-            "answer": (
-                "I couldn't find relevant content for that question. Try asking about a specific "
-                "topic, person, standard, or section from your uploaded documents."
-            ),
+            "answer": build_vague_answer(),
             "sources": [],
             "masked": mask_sensitive,
             "document_count": collection_count(),
         }
 
-    answer = build_extractive_answer(question, docs)
-    context = "\n\n".join(doc.page_content for doc in docs[:3])
-    answer = _maybe_enhance_with_llm(question, context, answer)
+    retriever = get_retriever(search_k=SEARCH_K)
+    raw_docs = retriever.get_relevant_documents(cleaned_question)
+    docs = filter_documents(raw_docs) or raw_docs
 
-    sources = mask_documents(docs[:3], enabled=mask_sensitive)
+    if is_meta_question(cleaned_question):
+        answer = build_meta_answer(cleaned_question, docs, collection_count())
+    elif is_identity_question(cleaned_question):
+        answer = build_identity_answer(docs)
+    elif is_summarize_intent(cleaned_question):
+        answer = build_summary_answer(docs)
+    elif not docs:
+        answer = build_vague_answer()
+    else:
+        answer = build_extractive_answer(cleaned_question, docs)
+        context = "\n\n".join(doc.page_content for doc in docs[:3])
+        answer = _maybe_enhance_with_llm(cleaned_question, context, answer)
+
+    sources = mask_documents(docs[:3], enabled=mask_sensitive) if docs else []
 
     return {
         "answer": answer,

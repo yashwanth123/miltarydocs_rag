@@ -4,84 +4,132 @@ const queryInput = document.getElementById("queryInput");
 const sendButton = document.getElementById("sendButton");
 const maskToggle = document.getElementById("maskToggle");
 const clearChatButton = document.getElementById("clearChat");
-const statusCard = document.getElementById("statusCard");
 const statusLabel = document.getElementById("statusLabel");
-const statusDetail = document.getElementById("statusDetail");
+const chunkCount = document.getElementById("chunkCount");
+const statusPill = document.getElementById("statusPill");
 const promptChips = document.getElementById("promptChips");
+
+const PROMPT_MAP = {
+  Doctrine: "Explain the military chain of command",
+  Summary: "Summarize the indexed documents",
+  Guide: "What can I ask?",
+};
 
 function autoResize(textarea) {
   textarea.style.height = "auto";
-  textarea.style.height = `${Math.min(textarea.scrollHeight, 140)}px`;
+  textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+}
+
+function renderAnswer(text) {
+  const blocks = text.split("\n\n");
+  const html = blocks
+    .map((block) => {
+      const trimmed = block.trim();
+      if (trimmed.startsWith("•")) {
+        const items = trimmed
+          .split("\n")
+          .map((line) => line.replace(/^•\s*/, "").trim())
+          .filter(Boolean);
+        return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+      }
+      return `<p>${escapeHtml(trimmed).replace(/\n/g, "<br>")}</p>`;
+    })
+    .join("");
+  return html;
+}
+
+function escapeHtml(value) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function createMessage(role, text, sources = []) {
-  const msg = document.createElement("div");
-  msg.className = `msg ${role}`;
+  const message = document.createElement("article");
+  message.className = `message ${role}`;
 
   const avatar = document.createElement("div");
-  avatar.className = "avatar";
-  avatar.textContent = role === "user" ? "You" : "AI";
+  avatar.className = `avatar ${role === "user" ? "user-avatar" : "bot-avatar"}`;
+  if (role === "user") {
+    avatar.textContent = "YOU";
+  } else {
+    avatar.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3c-4 0-7 2.5-7 6v2c0 3.5 3 6 7 6s7-2.5 7-6V9c0-3.5-3-6-7-6z" fill="currentColor"/></svg>';
+  }
 
-  const content = document.createElement("div");
-  content.className = "content";
+  const bubble = document.createElement("div");
+  bubble.className = `bubble ${role === "user" ? "user-bubble" : "bot-bubble"}`;
 
-  const textEl = document.createElement("div");
-  textEl.className = "text";
-  textEl.textContent = text;
-  content.appendChild(textEl);
+  const label = document.createElement("div");
+  label.className = "bubble-label";
+  label.textContent = role === "user" ? "You" : "Assistant";
 
-  if (role === "assistant" && sources.length > 0) {
-    const wrap = document.createElement("div");
-    wrap.className = "sources-wrap";
+  const body = document.createElement("div");
+  body.className = "bubble-body";
+
+  if (role === "user") {
+    body.textContent = text;
+  } else {
+    body.innerHTML = renderAnswer(text);
+  }
+
+  bubble.appendChild(label);
+  bubble.appendChild(body);
+
+  if (role === "bot" && sources.length > 0) {
+    const sourcesWrap = document.createElement("div");
+    sourcesWrap.className = "sources";
 
     const toggle = document.createElement("button");
     toggle.type = "button";
-    toggle.className = "sources-toggle";
-    toggle.textContent = `Show ${sources.length} source${sources.length > 1 ? "s" : ""}`;
+    toggle.className = "sources-btn";
+    toggle.textContent = `View ${sources.length} source${sources.length > 1 ? "s" : ""}`;
 
     const list = document.createElement("div");
-    list.className = "sources-list";
+    list.className = "source-list";
 
     sources.forEach((source) => {
-      const item = document.createElement("div");
-      item.className = "source-item";
-
-      const title = document.createElement("strong");
-      title.textContent = `${source.source}${source.page ? ` · page ${source.page}` : ""}`;
-
-      const body = document.createElement("p");
-      body.textContent = source.content.slice(0, 280);
-
-      item.appendChild(title);
-      item.appendChild(body);
-      list.appendChild(item);
+      const card = document.createElement("div");
+      card.className = "source-card";
+      card.innerHTML = `
+        <strong>${escapeHtml(source.source)}${source.page ? ` · page ${source.page}` : ""}</strong>
+        <p>${escapeHtml(source.content.slice(0, 260))}</p>
+      `;
+      list.appendChild(card);
     });
 
     toggle.addEventListener("click", () => {
       const open = list.classList.toggle("open");
       toggle.textContent = open
         ? `Hide ${sources.length} source${sources.length > 1 ? "s" : ""}`
-        : `Show ${sources.length} source${sources.length > 1 ? "s" : ""}`;
+        : `View ${sources.length} source${sources.length > 1 ? "s" : ""}`;
     });
 
-    wrap.appendChild(toggle);
-    wrap.appendChild(list);
-    content.appendChild(wrap);
+    sourcesWrap.appendChild(toggle);
+    sourcesWrap.appendChild(list);
+    bubble.appendChild(sourcesWrap);
   }
 
-  msg.appendChild(avatar);
-  msg.appendChild(content);
-  messagesEl.appendChild(msg);
+  message.appendChild(avatar);
+  message.appendChild(bubble);
+  messagesEl.appendChild(message);
   messagesEl.scrollTop = messagesEl.scrollHeight;
-  return msg;
+  return message;
+}
+
+function createTypingMessage() {
+  const message = createMessage("bot", "");
+  const body = message.querySelector(".bubble-body");
+  body.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  message.dataset.loading = "true";
+  return message;
 }
 
 async function sendQuery(query) {
   createMessage("user", query);
   sendButton.disabled = true;
 
-  const loadingNode = createMessage("assistant", "Searching your documents...");
-  loadingNode.classList.add("loading");
+  const loadingNode = createTypingMessage();
 
   try {
     const response = await fetch("/ask", {
@@ -97,15 +145,15 @@ async function sendQuery(query) {
     loadingNode.remove();
 
     if (!response.ok) {
-      createMessage("assistant", data.detail || "Something went wrong.");
+      createMessage("bot", data.detail || "Something went wrong while processing your request.");
       return;
     }
 
-    createMessage("assistant", data.answer, data.sources || []);
+    createMessage("bot", data.answer, data.sources || []);
     refreshHealth();
   } catch (error) {
     loadingNode.remove();
-    createMessage("assistant", `Network error: ${error.message}`);
+    createMessage("bot", `Network error: ${error.message}`);
   } finally {
     sendButton.disabled = false;
     queryInput.focus();
@@ -116,15 +164,15 @@ async function refreshHealth() {
   try {
     const response = await fetch("/health");
     const data = await response.json();
-    statusCard.classList.add("online");
-    statusCard.classList.remove("offline");
-    statusLabel.textContent = "Ready";
-    statusDetail.textContent = `${data.indexed_chunks} chunks indexed`;
+    statusLabel.textContent = "Online";
+    chunkCount.textContent = `${data.indexed_chunks} chunks`;
+    statusPill.classList.add("online");
+    statusPill.textContent = "Backend connected · Local RAG active";
   } catch (_error) {
-    statusCard.classList.add("offline");
-    statusCard.classList.remove("online");
     statusLabel.textContent = "Offline";
-    statusDetail.textContent = "Run uvicorn backend.main:app --reload";
+    chunkCount.textContent = "—";
+    statusPill.classList.remove("online");
+    statusPill.textContent = "Start server: uvicorn backend.main:app --reload";
   }
 }
 
@@ -138,9 +186,10 @@ chatForm.addEventListener("submit", async (event) => {
 });
 
 promptChips.addEventListener("click", (event) => {
-  const chip = event.target.closest(".chip");
-  if (!chip) return;
-  queryInput.value = chip.textContent;
+  const card = event.target.closest(".prompt-card");
+  if (!card) return;
+  const tag = card.querySelector(".prompt-tag")?.textContent;
+  queryInput.value = PROMPT_MAP[tag] || card.textContent.trim();
   autoResize(queryInput);
   chatForm.requestSubmit();
 });
@@ -148,8 +197,8 @@ promptChips.addEventListener("click", (event) => {
 clearChatButton.addEventListener("click", () => {
   messagesEl.innerHTML = "";
   createMessage(
-    "assistant",
-    "Chat cleared. Ask a specific question about your documents, or use a suggested prompt."
+    "bot",
+    "Conversation reset.\n\nAsk a specific question about doctrine, summaries, skills, or standards in your indexed files."
   );
 });
 
