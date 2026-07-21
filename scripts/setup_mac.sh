@@ -33,6 +33,7 @@ python - <<'PY'
 import dotenv
 import chromadb
 import fastapi
+import pypdf
 print("Dependencies OK")
 PY
 

@@ -137,7 +137,7 @@ Masking applies to both the generated answer and retrieved source snippets. Turn
 - Embeddings: `sentence-transformers/all-MiniLM-L6-v2` (384 dimensions, local CPU)
 - LLM: `google/flan-t5-base` (local, free)
 - Vector store: ChromaDB persisted in `chroma_db/`
-- PDF parsing: native text extraction with OCR fallback
+- PDF parsing: native text extraction with pypdf (no native compile on macOS)
 - Frontend: responsive chat UI served from FastAPI
 
 ---
@@ -145,7 +145,8 @@ Masking applies to both the generated answer and retrieved source snippets. Turn
 ## Notes
 
 - First run downloads Hugging Face models automatically.
-- OCR requires Tesseract installed on your system for scanned PDFs.
+- PDF text extraction uses `pypdf` and works on macOS/Python 3.13 without compiling native libraries.
+- Scanned image-only PDFs may need to be converted to searchable PDFs first.
 - For stronger answers on capable hardware, set `LLM_MODEL` to a larger local model.
 - No paid API keys are required for the default setup.
 
