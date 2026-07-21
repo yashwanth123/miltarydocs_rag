@@ -1,0 +1,35 @@
+---
+branch: space_force
+topic: overview
+doc_type: guide
+source_url: https://www.spaceforce.com/
+title: U.S. Space Force Overview for New Recruits
+---
+
+# U.S. Space Force — Overview for Prospective Recruits
+
+Established in 2019, the Space Force organizes, trains, and equips forces to conduct space operations supporting U.S. national security and allied operations.
+
+## Mission focus
+
+Satellite operations, missile warning, space domain awareness, cyber operations tied to space systems, and acquisition of space capabilities are core mission areas.
+
+## Accession pathways
+
+Many Space Force members transfer from the Air Force. Direct enlistment opportunities expand over time — recruiters explain current accession models and specialty codes (SFSCs aligned with Air Force AFSC structures).
+
+## Career fields
+
+Space operations, intelligence, cyber, engineering, and acquisition roles support orbital and ground-based systems. Technical aptitude and security clearance eligibility are important factors.
+
+## Training
+
+Initial training follows Air Force accession pipelines for many members, with Space Force-specific indoctrination on space doctrine and organizational culture.
+
+## Why join
+
+The Space Force offers cutting-edge technical missions with growing civilian credential relevance in aerospace and cyber sectors.
+
+## Next steps
+
+Contact a Space Force or Air Force recruiter for current direct-enlist and transfer options, clearance requirements, and technical aptitude thresholds.

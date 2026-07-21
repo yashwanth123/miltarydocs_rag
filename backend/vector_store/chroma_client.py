@@ -3,10 +3,15 @@ import shutil
 from pathlib import Path
 
 from dotenv import load_dotenv
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
 
 load_dotenv()
+
+# Reduce background writes/noise from Chroma telemetry
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+os.environ.setdefault("CHROMA_TELEMETRY", "False")
+
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
 
 CHROMA_DIR = os.getenv("CHROMA_PERSIST_DIR", "chroma_db")
 COLLECTION_NAME = os.getenv("CHROMA_COLLECTION", "military-docs")
@@ -16,16 +21,22 @@ EMBEDDING_MODEL = os.getenv(
 
 _embeddings: HuggingFaceEmbeddings | None = None
 _vector_store: Chroma | None = None
+_embeddings_ready = False
+
+
+def embeddings_ready() -> bool:
+    return _embeddings_ready
 
 
 def get_embeddings() -> HuggingFaceEmbeddings:
-    global _embeddings
+    global _embeddings, _embeddings_ready
     if _embeddings is None:
         _embeddings = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
             model_kwargs={"device": "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )
+        _embeddings_ready = True
     return _embeddings
 
 
@@ -49,6 +60,16 @@ def add_to_index(documents: list) -> int:
     return len(documents)
 
 
+def remove_documents_by_source(source: str) -> None:
+    if not source:
+        return
+    try:
+        store = get_vector_store()
+        store._collection.delete(where={"source": source})
+    except Exception:
+        pass
+
+
 def get_retriever(search_k: int = 4):
     return get_vector_store().as_retriever(search_kwargs={"k": search_k})
 
@@ -58,6 +79,25 @@ def collection_count() -> int:
         return get_vector_store()._collection.count()
     except Exception:
         return 0
+
+
+def get_all_documents() -> list:
+    from langchain_core.documents import Document
+
+    try:
+        store = get_vector_store()
+        payload = store._collection.get(include=["documents", "metadatas"])
+        documents = payload.get("documents") or []
+        metadatas = payload.get("metadatas") or []
+    except Exception:
+        return []
+
+    results: list[Document] = []
+    for index, content in enumerate(documents):
+        metadata = metadatas[index] if index < len(metadatas) else {}
+        if content:
+            results.append(Document(page_content=content, metadata=metadata or {}))
+    return results
 
 
 def reset_collection() -> None:

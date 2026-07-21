@@ -1,0 +1,35 @@
+---
+branch: general
+topic: asvab
+doc_type: guide
+source_url: https://www.officialasvab.com/
+title: ASVAB Test Basics
+---
+
+# ASVAB — Armed Services Vocational Aptitude Battery
+
+The ASVAB measures aptitudes used to determine qualification for enlistment and eligibility for military occupational specialties (MOS/AFSC/ratings).
+
+## Test sections
+
+The ASVAB includes sections such as General Science, Arithmetic Reasoning, Word Knowledge, Paragraph Comprehension, Mathematics Knowledge, Electronics Information, Auto and Shop Information, Mechanical Comprehension, and Assembling Objects (availability may vary by test version).
+
+## AFQT score
+
+The Armed Forces Qualification Test (AFQT) score is derived from four ASVAB subtests and determines basic enlistment eligibility. Each branch sets minimum AFQT score requirements that can change with recruiting goals.
+
+## Line scores and job qualification
+
+Individual jobs require minimum line scores (combinations of subtests). For example, technical fields often require strong Mathematics Knowledge and Electronics Information scores. Your recruiter maps your scores to available jobs at the time of enlistment.
+
+## Taking the ASVAB
+
+High school students may take the ASVAB through schools. Others take it at MEPS or a Military Entrance Test (MET) site with recruiter arrangement. Retest rules apply — there are waiting periods between attempts.
+
+## Preparation tips
+
+Review basic algebra, vocabulary in context, and mechanical reasoning fundamentals. Official practice materials are available through the Department of Defense ASVAB program. Avoid unverified "guaranteed score" services.
+
+## After the test
+
+Scores remain valid for enlistment purposes for up to two years. Discuss results with your recruiter to understand which career fields are realistically available.

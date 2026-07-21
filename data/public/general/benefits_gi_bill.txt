@@ -1,0 +1,37 @@
+---
+branch: general
+topic: benefits
+doc_type: guide
+source_url: https://www.va.gov/education/about-gi-bill-benefits/
+title: Military Benefits and GI Bill Overview
+---
+
+# Military Benefits — Public Overview
+
+Active-duty service members and veterans may qualify for education, healthcare, housing, and retirement benefits established by federal law.
+
+## GI Bill education benefits
+
+The Post-9/11 GI Bill covers tuition, a monthly housing allowance, and a books stipend for eligible veterans and service members. Eligibility depends on length and timing of active-duty service. Transfer of benefits to dependents is possible under specific service commitments.
+
+The Montgomery GI Bill (MGIB) remains available for some legacy eligibility paths. Compare options with a VA education counselor before electing a benefit program.
+
+## Healthcare (TRICARE)
+
+Active-duty members receive care through military treatment facilities and TRICARE. Family members may enroll in TRICARE plans depending on sponsor status and location. Reserve component members have different eligibility rules when not on active duty.
+
+## Housing
+
+Living in barracks or dormitories is common for unmarried junior enlisted members in training. At permanent duty stations, BAH helps cover off-base housing costs. On-base housing may be available depending on location and family status.
+
+## Retirement
+
+The Blended Retirement System (BRS) combines a reduced pension (after 20 years of service) with automatic and matching Thrift Savings Plan (TSP) contributions. Members who entered service after the BRS cutoff date are generally enrolled in BRS unless they opted into the legacy system during the transition window.
+
+## Transition assistance
+
+The Transition Assistance Program (TAP) helps separating members prepare resumes, translate military skills, and access VA benefits. Start TAP planning 12–18 months before separation when possible.
+
+## Disclaimer reminder
+
+Benefit amounts and eligibility rules change with legislation. Verify current details through official VA, DFAS, and service personnel websites or a certified counselor.

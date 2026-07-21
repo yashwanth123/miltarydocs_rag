@@ -1,0 +1,33 @@
+---
+branch: general
+topic: ranks
+doc_type: reference
+source_url: https://www.defense.gov/Resources/Insignia/
+title: Military Ranks and Pay Basics
+---
+
+# Military Ranks and Pay — Public Overview
+
+All U.S. military branches use enlisted and officer rank structures. Pay is based on rank (pay grade) and time in service, updated annually by federal law.
+
+## Enlisted pay grades (E-1 through E-9)
+
+New enlistees typically enter at E-1 or E-2 depending on prior service, college credits, or enlistment incentives. Promotion through E-4 is largely time-based with performance requirements. Senior enlisted ranks (E-7 through E-9) require board selection and demonstrated leadership.
+
+Example progression: Private (E-1) → Private First Class (E-2) → Specialist/Corporal (E-3) → Sergeant (E-4) and upward. Rank titles differ by branch — for example, the Navy uses Seaman and Petty Officer titles for enlisted sailors.
+
+## Officer pay grades (O-1 through O-10)
+
+Officers enter through ROTC, service academies, Officer Candidate School, or direct commission programs. Second Lieutenant (O-1) or Ensign (O-1 Navy) is the typical entry rank for new officers.
+
+## Base pay
+
+Base pay tables are public and published by the Defense Finance and Accounting Service (DFAS). Actual take-home pay includes allowances such as Basic Allowance for Housing (BAH) and Basic Allowance for Subsistence (BAS) when applicable, which vary by location and dependency status.
+
+## Allowances and special pays
+
+Some career fields receive incentive pays (flight, sea duty, hazardous duty, language proficiency). BAH rates depend on duty station zip code and whether the member has dependents. BAS offsets food costs for members not eating at government dining facilities.
+
+## Key principle
+
+Rank determines responsibility and authority in the chain of command. Pay reflects rank and longevity — not individual job title alone.
