@@ -1,0 +1,37 @@
+Military Chain of Command Overview
+
+UNCLASSIFIED
+
+The military chain of command is the line of authority and responsibility through which orders are transmitted. Each service member reports to a superior, and commanders are responsible for the welfare, training, and mission execution of subordinates.
+
+Example chain of command (U.S. Army):
+1. President of the United States
+2. Secretary of Defense
+3. Chairman of the Joint Chiefs of Staff
+4. Chief of Staff of the Army
+5. Commanding General, FORSCOM
+6. Division Commander
+7. Brigade Commander
+8. Battalion Commander
+9. Company Commander
+10. Platoon Leader
+
+Key principles:
+- Unity of command: every soldier receives orders from one superior.
+- Span of control: leaders should manage a manageable number of subordinates.
+- Delegation of authority: commanders may delegate authority but not responsibility.
+
+Military references cited in this document:
+- MIL-STD-810 for environmental engineering considerations
+- MIL-PRF-31000 for performance specifications
+
+Contact example (for masking demo only):
+- Email: training.officer@example.mil
+- Phone: (703) 555-0198
+- Sample ID: 123-45-6789
+
+Operational note:
+Orders flow down the chain; accountability flows up. When in doubt, consult the next higher commander or the applicable regulation before taking independent action.
+
+Classification reminder:
+This sample document is marked UNCLASSIFIED for demonstration purposes only.

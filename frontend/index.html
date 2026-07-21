@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MilitaryDocs RAG</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">⚔</div>
+        <div>
+          <h1>MilitaryDocs RAG</h1>
+          <p>Free local document assistant</p>
+        </div>
+      </div>
+
+      <div class="status-card" id="statusCard">
+        <span class="status-dot"></span>
+        <div>
+          <strong id="statusLabel">Checking backend...</strong>
+          <p id="statusDetail">Waiting for health check</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Privacy masking</h2>
+        <label class="toggle">
+          <input type="checkbox" id="maskToggle" checked />
+          <span class="slider"></span>
+        </label>
+        <p class="panel-copy">
+          When enabled, responses and source snippets redact SSNs, emails, phone numbers,
+          and classification markings before display.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h2>How to use</h2>
+        <ol>
+          <li>Add PDF or TXT files to <code>data/</code></li>
+          <li>Run <code>python scripts/ingest_documents.py --reset</code></li>
+          <li>Ask questions about your documents</li>
+        </ol>
+      </div>
+
+      <button class="ghost-button" id="clearChat">Clear conversation</button>
+    </aside>
+
+    <main class="chat">
+      <header class="chat-header">
+        <div>
+          <h2>Document Q&amp;A</h2>
+          <p>Powered by Hugging Face + ChromaDB — fully free and local</p>
+        </div>
+      </header>
+
+      <section class="messages" id="messages">
+        <article class="message assistant">
+          <div class="bubble">
+            Welcome. Ask about chain of command, regulations, equipment, or any content
+            in your indexed military documents.
+          </div>
+        </article>
+      </section>
+
+      <form class="composer" id="chatForm">
+        <textarea
+          id="queryInput"
+          rows="2"
+          placeholder="Ask a question about your military documents..."
+          required
+        ></textarea>
+        <button type="submit" id="sendButton">Send</button>
+      </form>
+    </main>
+  </div>
+
+  <template id="messageTemplate">
+    <article class="message">
+      <div class="bubble"></div>
+    </article>
+  </template>
+
+  <template id="sourcesTemplate">
+    <div class="sources">
+      <h3>Sources</h3>
+      <ul></ul>
+    </div>
+  </template>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
